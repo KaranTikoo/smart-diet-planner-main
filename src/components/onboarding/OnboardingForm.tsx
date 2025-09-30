@@ -436,7 +436,7 @@ const OnboardingForm = () => {
               Next
             </Button>
           ) : (
-            <Button type="submit" disabled={profileLoading || authLoading || !user || isSaving}>
+            <Button type="submit" disabled={isSaving}>
               {isSaving ? "Saving..." : "Complete Setup"}
             </Button>
           )}
