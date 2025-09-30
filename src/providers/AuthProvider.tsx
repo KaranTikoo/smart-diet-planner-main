@@ -1,12 +1,13 @@
 import React from 'react'
 import { useAuthState } from '@/hooks/useAuth'
+import { User, Session, AuthError } from '@supabase/supabase-js' // Import necessary types
 
 interface AuthContextType {
-  user: any
-  session: any
+  user: User | null
+  session: Session | null
   loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error?: any }>
-  signUp: (email: string, password: string) => Promise<{ error?: any }>
+  signIn: (email: string, password: string) => Promise<{ error?: AuthError }>
+  signUp: (email: string, password: string) => Promise<{ error?: AuthError }>
   signOut: () => Promise<void>
 }
 

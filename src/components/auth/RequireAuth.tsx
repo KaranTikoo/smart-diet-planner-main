@@ -1,7 +1,6 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers/AuthProvider"; // Corrected import path
 
 interface RequireAuthProps {
   children: React.ReactNode;

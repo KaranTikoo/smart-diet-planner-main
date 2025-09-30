@@ -5,13 +5,16 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import TodaysMealPlan from "@/components/dashboard/TodaysMealPlan";
 import WeeklyProgress from "@/components/dashboard/WeeklyProgress";
 import AddFoodEntryDialog from "@/components/dashboard/AddFoodEntryDialog";
+import AddWaterEntryDialog from "@/components/dashboard/AddWaterEntryDialog"; // Import the new dialog
 import { useProfile } from "@/hooks/useProfile";
 import { useFoodEntries } from "@/hooks/useFoodEntries";
 import { useWaterIntake } from "@/hooks/useWaterIntake";
+import { useAuth } from "@/providers/AuthProvider"; // Corrected import path for useAuth
 import { format } from "date-fns";
 import { MealPlan } from "@/lib/supabase"; // Import MealPlan type
 
 const Dashboard = () => {
+  const { user } = useAuth(); // Use useAuth from AuthProvider
   const { profile, loading: profileLoading, refetch: refetchProfile } = useProfile();
   const today = format(new Date(), 'yyyy-MM-dd');
   const { entries: foodEntries, loading: foodEntriesLoading, refetch: refetchFoodEntries } = useFoodEntries(today);
@@ -94,7 +97,7 @@ const Dashboard = () => {
         />
 
         {/* Diet Stats */}
-        <DietStats {...dietStats} />
+        <DietStats {...dietStats} onAddWater={handleAddWaterEntry} />
 
         {/* Today's Meals */}
         <TodaysMealPlan meals={mealsForToday} />

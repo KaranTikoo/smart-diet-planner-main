@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react'
+import { useState, useEffect } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
@@ -28,24 +28,27 @@ const createMockAuth = () => ({
   }
 })
 
-interface AuthContextType {
-  user: User | null
-  session: Session | null
-  loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error?: AuthError }>
-  signUp: (email: string, password: string) => Promise<{ error?: AuthError }>
-  signOut: () => Promise<void>
-}
+// AuthContextType is now defined in AuthProvider.tsx
+// interface AuthContextType {
+//   user: User | null
+//   session: Session | null
+//   loading: boolean
+//   signIn: (email: string, password: string) => Promise<{ error?: AuthError }>
+//   signUp: (email: string, password: string) => Promise<{ error?: AuthError }>
+//   signOut: () => Promise<void>
+// }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+// AuthContext is now created in AuthProvider.tsx
+// const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export const useAuth = () => {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
-}
+// useAuth is now defined in AuthProvider.tsx
+// export const useAuth = () => {
+//   const context = useContext(AuthContext)
+//   if (!context) {
+//     throw new Error('useAuth must be used within an AuthProvider')
+//   }
+//   return context
+// }
 
 export const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null)
