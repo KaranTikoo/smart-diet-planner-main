@@ -63,6 +63,7 @@ export const useProfile = () => {
     }
   }
 
+  // Modified createProfile to use upsert
   const createProfile = async (profileData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) return
 
@@ -70,7 +71,7 @@ export const useProfile = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .insert([
+        .upsert([
           {
             id: user.id,
             email: user.email || '',
