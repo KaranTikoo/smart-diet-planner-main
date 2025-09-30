@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import MealPlanCard from "@/components/ui/MealPlanCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,106 +7,144 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { PlusCircle, RefreshCw, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { useMealPlans } from "@/hooks/useMealPlans"; // Import the new hook
+import { MealPlan as SupabaseMealPlan, MealTypeEnum } from "@/lib/supabase"; // Import Supabase MealPlan type
 
-// Sample meal plan data
-const generateMockMealPlan = (date: Date) => {
-  const breakfast = {
-    title: "Breakfast",
-    date,
-    mealType: "breakfast" as const,
-    items: [
-      { name: "Greek Yogurt Parfait", calories: 280, prepTime: 5 },
-      { name: "Whole Grain Toast", calories: 80, prepTime: 2 },
-    ],
-    totalCalories: 360,
+// Helper to map Supabase MealPlan to what MealPlanCard expects
+const mapSupabaseMealPlanToCardProps = (supabasePlan: SupabaseMealPlan) => {
+  return {
+    title: supabasePlan.meal_type.charAt(0).toUpperCase() + supabasePlan.meal_type.slice(1), // Capitalize meal type
+    date: new Date(supabasePlan.plan_date),
+    mealType: supabasePlan.meal_type,
+    items: (supabasePlan.foods as any[] || []).map(food => ({
+      name: food.name,
+      calories: food.calories,
+      prepTime: food.prepTime || 0,
+    })),
+    totalCalories: supabasePlan.total_calories || 0,
   };
-
-  const lunch = {
-    title: "Lunch",
-    date,
-    mealType: "lunch" as const,
-    items: [
-      { name: "Grilled Chicken Salad", calories: 350, prepTime: 20 },
-      { name: "Quinoa", calories: 120, prepTime: 15 },
-    ],
-    totalCalories: 470,
-  };
-
-  const dinner = {
-    title: "Dinner",
-    date,
-    mealType: "dinner" as const,
-    items: [
-      { name: "Salmon with Asparagus", calories: 380, prepTime: 25 },
-      { name: "Brown Rice", calories: 150, prepTime: 20 },
-    ],
-    totalCalories: 530,
-  };
-
-  const snack = {
-    title: "Snack",
-    date,
-    mealType: "snack" as const,
-    items: [
-      { name: "Apple with Almond Butter", calories: 200, prepTime: 2 },
-    ],
-    totalCalories: 200,
-  };
-
-  return { breakfast, lunch, dinner, snack };
 };
 
 const MealPlanner = () => {
   const [date, setDate] = useState<Date>(new Date());
+  const formattedDate = format(date, 'yyyy-MM-dd');
+  const { mealPlans, loading: isLoadingMealPlans, refetch: refetchMealPlans, addMealPlan } = useMealPlans(formattedDate);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
-  const [weekMealPlan, setWeekMealPlan] = useState<Record<string, any>>({});
-  
-  // Initialize meal plan for the current date
-  const todayStr = date.toISOString().split('T')[0];
-  if (!weekMealPlan[todayStr]) {
-    const mockPlan = generateMockMealPlan(date);
-    weekMealPlan[todayStr] = mockPlan;
-  }
 
-  const currentMealPlan = weekMealPlan[todayStr] || generateMockMealPlan(date);
+  // Group meal plans by meal type for easy access
+  const mealsForSelectedDay: Record<MealTypeEnum, SupabaseMealPlan | null> = {
+    breakfast: null,
+    lunch: null,
+    dinner: null,
+    snack: null,
+  };
+
+  mealPlans.forEach(plan => {
+    mealsForSelectedDay[plan.meal_type] = plan;
+  });
+
+  // Fallback to a default empty structure if no plan exists for a meal type
+  const getMealPlanCardProps = (mealType: MealTypeEnum) => {
+    const plan = mealsForSelectedDay[mealType];
+    if (plan) {
+      return mapSupabaseMealPlanToCardProps(plan);
+    }
+    return {
+      title: mealType.charAt(0).toUpperCase() + mealType.slice(1),
+      date: date,
+      mealType: mealType,
+      items: [],
+      totalCalories: 0,
+    };
+  };
 
   const handleDateChange = (newDate: Date | undefined) => {
     if (newDate) {
       setDate(newDate);
-      
-      // Check if we already have a meal plan for this date
-      const dateStr = newDate.toISOString().split('T')[0];
-      if (!weekMealPlan[dateStr]) {
-        const mockPlan = generateMockMealPlan(newDate);
-        setWeekMealPlan(prev => ({
-          ...prev,
-          [dateStr]: mockPlan
-        }));
-      }
     }
   };
 
-  const handleGenerateMealPlan = () => {
+  const handleGenerateMealPlan = async () => {
     setIsGeneratingPlan(true);
-    
-    // Simulate generating a new meal plan
-    setTimeout(() => {
-      const dateStr = date.toISOString().split('T')[0];
-      const mockPlan = generateMockMealPlan(date);
-      
-      setWeekMealPlan(prev => ({
-        ...prev,
-        [dateStr]: mockPlan
-      }));
-      
+    toast.info("Generating new meal plan...");
+
+    // Simulate generating a new meal plan and adding it to Supabase
+    // In a real app, this would involve AI logic or a more complex generation process.
+    const mockMealPlanData = [
+      {
+        plan_name: "Breakfast Plan",
+        plan_date: formattedDate,
+        meal_type: "breakfast" as MealTypeEnum,
+        foods: [
+          { name: "Oatmeal with Berries", calories: 300, prepTime: 10 },
+          { name: "Protein Shake", calories: 150, prepTime: 2 },
+        ],
+        total_calories: 450,
+        prep_time: 12,
+      },
+      {
+        plan_name: "Lunch Plan",
+        plan_date: formattedDate,
+        meal_type: "lunch" as MealTypeEnum,
+        foods: [
+          { name: "Chicken & Veggie Wrap", calories: 400, prepTime: 15 },
+        ],
+        total_calories: 400,
+        prep_time: 15,
+      },
+      {
+        plan_name: "Dinner Plan",
+        plan_date: formattedDate,
+        meal_type: "dinner" as MealTypeEnum,
+        foods: [
+          { name: "Baked Salmon with Quinoa", calories: 550, prepTime: 30 },
+        ],
+        total_calories: 550,
+        prep_time: 30,
+      },
+      {
+        plan_name: "Snack Plan",
+        plan_date: formattedDate,
+        meal_type: "snack" as MealTypeEnum,
+        foods: [
+          { name: "Apple and Peanut Butter", calories: 200, prepTime: 5 },
+        ],
+        total_calories: 200,
+        prep_time: 5,
+      },
+    ];
+
+    try {
+      // Delete existing plans for the day before adding new ones
+      for (const plan of mealPlans) {
+        await supabase.from('meal_plans').delete().eq('id', plan.id);
+      }
+
+      for (const planData of mockMealPlanData) {
+        await addMealPlan(planData);
+      }
+      toast.success("New meal plan generated and saved!");
+      refetchMealPlans(); // Refetch to display the new plans
+    } catch (error) {
+      console.error("Error generating/saving meal plan:", error);
+      toast.error("Failed to generate new meal plan.");
+    } finally {
       setIsGeneratingPlan(false);
-      toast.success("New meal plan generated!");
-    }, 1500);
+    }
   };
 
   const handleMealClick = (mealType: string) => {
     toast.info(`Viewing details for ${mealType}`);
   };
+
+  // Calculate daily summary from fetched meal plans
+  const dailyTotalCalories = mealPlans.reduce((sum, plan) => sum + (plan.total_calories || 0), 0);
+  // Placeholder for protein, carbs, fat as they are not directly in meal_plans table
+  // In a real app, you'd sum these from the 'foods' JSON or a separate food_items table.
+  const dailyTotalProtein = 0; 
+  const dailyTotalCarbs = 0;
+  const dailyTotalFat = 0;
 
   return (
     <MainLayout>
@@ -122,7 +159,7 @@ const MealPlanner = () => {
           <Button 
             className="mt-4 sm:mt-0" 
             onClick={handleGenerateMealPlan}
-            disabled={isGeneratingPlan}
+            disabled={isGeneratingPlan || isLoadingMealPlans}
           >
             {isGeneratingPlan ? (
               <>
@@ -164,23 +201,20 @@ const MealPlanner = () => {
                       <div className="flex justify-between">
                         <span>Total Calories:</span>
                         <span className="font-medium">
-                          {currentMealPlan.breakfast.totalCalories + 
-                           currentMealPlan.lunch.totalCalories + 
-                           currentMealPlan.dinner.totalCalories + 
-                           currentMealPlan.snack.totalCalories}
+                          {dailyTotalCalories}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Protein:</span>
-                        <span className="font-medium">120g</span>
+                        <span className="font-medium">{dailyTotalProtein}g</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Carbs:</span>
-                        <span className="font-medium">180g</span>
+                        <span className="font-medium">{dailyTotalCarbs}g</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Fat:</span>
-                        <span className="font-medium">60g</span>
+                        <span className="font-medium">{dailyTotalFat}g</span>
                       </div>
                     </div>
                   </CardContent>
@@ -202,24 +236,28 @@ const MealPlanner = () => {
                   {date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <MealPlanCard 
-                    {...currentMealPlan.breakfast}
-                    onClick={() => handleMealClick("breakfast")}
-                  />
-                  <MealPlanCard 
-                    {...currentMealPlan.lunch}
-                    onClick={() => handleMealClick("lunch")}
-                  />
-                  <MealPlanCard 
-                    {...currentMealPlan.dinner}
-                    onClick={() => handleMealClick("dinner")}
-                  />
-                  <MealPlanCard 
-                    {...currentMealPlan.snack}
-                    onClick={() => handleMealClick("snack")}
-                  />
-                </div>
+                {isLoadingMealPlans ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading meal plans...</div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <MealPlanCard 
+                      {...getMealPlanCardProps("breakfast")}
+                      onClick={() => handleMealClick("breakfast")}
+                    />
+                    <MealPlanCard 
+                      {...getMealPlanCardProps("lunch")}
+                      onClick={() => handleMealClick("lunch")}
+                    />
+                    <MealPlanCard 
+                      {...getMealPlanCardProps("dinner")}
+                      onClick={() => handleMealClick("dinner")}
+                    />
+                    <MealPlanCard 
+                      {...getMealPlanCardProps("snack")}
+                      onClick={() => handleMealClick("snack")}
+                    />
+                  </div>
+                )}
               </TabsContent>
               
               <TabsContent value="weekly">
