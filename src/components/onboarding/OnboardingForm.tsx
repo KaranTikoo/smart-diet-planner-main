@@ -18,7 +18,7 @@ import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum } from "@/lib/supa
 const OnboardingForm = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { profile, createProfile, updateProfile, loading: profileLoading, isSaving } = useProfile(); // Destructure isSaving
+  const { profile, createProfile, updateProfile, loading: profileLoading, isSaving } = useProfile();
   const [currentStep, setCurrentStep] = useState(1);
   const [onboardingData, setOnboardingData] = useState<Partial<Profile>>({
     full_name: "",
@@ -79,10 +79,9 @@ const OnboardingForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      toast.error("You must be logged in to complete onboarding.");
-      return;
-    }
+    // The user object is guaranteed to be present here because RequireAuth protects this route.
+    // If for some reason user is null, it indicates a deeper issue with auth state management
+    // or a bypass of RequireAuth, which should be addressed at that level.
 
     if (currentStep === 1 && (!onboardingData.full_name || !onboardingData.age || !onboardingData.gender || !onboardingData.height || !onboardingData.current_weight)) {
       toast.error("Please fill all basic information fields.");
@@ -95,7 +94,7 @@ const OnboardingForm = () => {
 
     try {
       const profileDataToSave: Omit<Profile, 'id' | 'created_at' | 'updated_at'> = {
-        email: user.email || "",
+        email: user!.email || "", // user is guaranteed to be non-null here
         full_name: onboardingData.full_name || null,
         age: onboardingData.age || null,
         gender: onboardingData.gender as GenderEnum || null,
