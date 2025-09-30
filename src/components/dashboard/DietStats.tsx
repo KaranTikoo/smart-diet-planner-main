@@ -1,7 +1,7 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ActivityIcon, TrendingUp, Apple, Beef, Droplets } from "lucide-react";
+import { ActivityIcon, TrendingUp, Apple, Beef, Droplets, PlusCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface DietStatsProps {
   caloriesConsumed: number;
@@ -11,6 +11,7 @@ interface DietStatsProps {
   fatPercentage: number;
   waterConsumed: number;
   waterGoal: number;
+  onAddWater?: () => void; // New prop for adding water
 }
 
 const DietStats = ({
@@ -21,9 +22,10 @@ const DietStats = ({
   fatPercentage,
   waterConsumed,
   waterGoal,
+  onAddWater
 }: DietStatsProps) => {
-  const caloriesPercentage = Math.min(100, Math.round((caloriesConsumed / caloriesGoal) * 100));
-  const waterPercentage = Math.min(100, Math.round((waterConsumed / waterGoal) * 100));
+  const caloriesPercentage = caloriesGoal > 0 ? Math.min(100, Math.round((caloriesConsumed / caloriesGoal) * 100)) : 0;
+  const waterPercentage = waterGoal > 0 ? Math.min(100, Math.round((waterConsumed / waterGoal) * 100)) : 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -71,12 +73,16 @@ const DietStats = ({
       </Card>
       
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <Droplets className="h-5 w-5 text-info" />
             Hydration
           </CardTitle>
-          <CardDescription>Daily water consumption</CardDescription>
+          {onAddWater && (
+            <Button variant="ghost" size="sm" onClick={onAddWater}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Water
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

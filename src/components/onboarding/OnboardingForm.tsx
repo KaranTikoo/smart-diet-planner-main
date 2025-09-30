@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,29 +11,54 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { useAuth } from "@/providers/AuthProvider";
+import { useProfile } from "@/hooks/useProfile";
+import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum } from "@/lib/supabase";
 
 const OnboardingForm = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { profile, createProfile, updateProfile, loading: profileLoading } = useProfile();
   const [currentStep, setCurrentStep] = useState(1);
-  const [userProfile, setUserProfile] = useState({
-    // Basic info
-    name: "",
-    age: "",
-    gender: "",
-    height: "",
-    weight: "",
-    
-    // Goals
-    goal: "weight_loss",
-    targetWeight: "",
-    activityLevel: "moderate",
-    
-    // Dietary preferences
-    diet: "no_restrictions",
+  const [onboardingData, setOnboardingData] = useState<Partial<Profile>>({
+    full_name: "",
+    age: null,
+    gender: null,
+    height: null,
+    current_weight: null,
+    goal_type: "lose_weight",
+    goal_weight: null,
+    activity_level: "moderately_active",
+    daily_calorie_goal: null, // This will be calculated or set later
+  });
+
+  useEffect(() => {
+    if (profile && !profileLoading) {
+      // If a profile already exists, pre-fill the form
+      setOnboardingData({
+        full_name: profile.full_name || "",
+        age: profile.age,
+        gender: profile.gender,
+        height: profile.height,
+        current_weight: profile.current_weight,
+        goal_type: profile.goal_type,
+        goal_weight: profile.goal_weight,
+        activity_level: profile.activity_level,
+      });
+    }
+  }, [profile, profileLoading]);
+
+  const handleChange = (field: keyof Profile, value: any) => {
+    setOnboardingData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Note: Allergies and avoidFoods are not directly in the Supabase `profiles` table.
+  // For now, we'll keep them in the local state, but they would need a separate table
+  // or a JSONB column in `profiles` for full persistence.
+  const [localDietaryPreferences, setLocalDietaryPreferences] = useState({
+    diet: "no_restrictions", // This would need to be stored in Supabase if desired
     allergies: [] as string[],
     avoidFoods: "",
-    
-    // Meal preferences
     mealsPerDay: 3,
     snacksPerDay: 1,
     preparationTime: "moderate",
@@ -41,12 +66,12 @@ const OnboardingForm = () => {
     budget: "medium",
   });
 
-  const handleChange = (field: string, value: any) => {
-    setUserProfile((prev) => ({ ...prev, [field]: value }));
+  const handleLocalDietaryChange = (field: string, value: any) => {
+    setLocalDietaryPreferences((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleAllergiesChange = (allergy: string) => {
-    setUserProfile((prev) => {
+    setLocalDietaryPreferences((prev) => {
       const allergies = [...prev.allergies];
       if (allergies.includes(allergy)) {
         return { ...prev, allergies: allergies.filter((a) => a !== allergy) };
@@ -56,17 +81,66 @@ const OnboardingForm = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Save user profile data (this would typically go to a backend)
-    localStorage.setItem("userProfile", JSON.stringify(userProfile));
-    
-    toast.success("Profile created successfully!");
-    navigate("/dashboard");
+    if (!user) {
+      toast.error("You must be logged in to complete onboarding.");
+      return;
+    }
+
+    // Basic validation for required fields in step 1
+    if (currentStep === 1 && (!onboardingData.full_name || !onboardingData.age || !onboardingData.gender || !onboardingData.height || !onboardingData.current_weight)) {
+      toast.error("Please fill all basic information fields.");
+      return;
+    }
+    // Basic validation for required fields in step 2
+    if (currentStep === 2 && (!onboardingData.goal_type || !onboardingData.activity_level || (onboardingData.goal_type === "lose_weight" && !onboardingData.goal_weight))) {
+      toast.error("Please fill all goals and activity fields.");
+      return;
+    }
+
+    try {
+      const profileDataToSave: Omit<Profile, 'id' | 'created_at' | 'updated_at'> = {
+        email: user.email || "",
+        full_name: onboardingData.full_name || null,
+        age: onboardingData.age || null,
+        gender: onboardingData.gender as GenderEnum || null,
+        height: onboardingData.height || null,
+        current_weight: onboardingData.current_weight || null,
+        goal_type: onboardingData.goal_type as GoalTypeEnum || null,
+        goal_weight: onboardingData.goal_weight || null,
+        activity_level: onboardingData.activity_level as ActivityLevelEnum || null,
+        daily_calorie_goal: onboardingData.daily_calorie_goal || null,
+      };
+
+      if (profile) {
+        await updateProfile(profileDataToSave);
+      } else {
+        await createProfile(profileDataToSave);
+      }
+      
+      toast.success("Profile created/updated successfully!");
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast.error("Failed to save profile. Please try again.");
+    }
   };
 
   const nextStep = () => {
+    // Basic validation before moving to the next step
+    if (currentStep === 1) {
+      if (!onboardingData.full_name || !onboardingData.age || !onboardingData.gender || !onboardingData.height || !onboardingData.current_weight) {
+        toast.error("Please fill all basic information fields before proceeding.");
+        return;
+      }
+    }
+    if (currentStep === 2) {
+      if (!onboardingData.goal_type || !onboardingData.activity_level || (onboardingData.goal_type === "lose_weight" && !onboardingData.goal_weight)) {
+        toast.error("Please fill all goals and activity fields before proceeding.");
+        return;
+      }
+    }
     setCurrentStep((prev) => Math.min(prev + 1, 3));
   };
 
@@ -100,14 +174,13 @@ const OnboardingForm = () => {
             
             {/* Step 1: Basic Information */}
             <TabsContent value="step-1" className="space-y-4 mt-4">
-              {/* ... keep existing code (basic information form fields) */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
-                    value={userProfile.name}
-                    onChange={(e) => handleChange("name", e.target.value)}
+                    value={onboardingData.full_name || ""}
+                    onChange={(e) => handleChange("full_name", e.target.value)}
                     placeholder="Enter your name"
                   />
                 </div>
@@ -117,8 +190,8 @@ const OnboardingForm = () => {
                   <Input
                     id="age"
                     type="number"
-                    value={userProfile.age}
-                    onChange={(e) => handleChange("age", e.target.value)}
+                    value={onboardingData.age || ""}
+                    onChange={(e) => handleChange("age", parseInt(e.target.value) || null)}
                     placeholder="Enter your age"
                     min="18"
                     max="100"
@@ -128,8 +201,8 @@ const OnboardingForm = () => {
                 <div className="space-y-2">
                   <Label>Gender</Label>
                   <RadioGroup
-                    value={userProfile.gender}
-                    onValueChange={(value) => handleChange("gender", value)}
+                    value={onboardingData.gender || ""}
+                    onValueChange={(value: GenderEnum) => handleChange("gender", value)}
                     className="flex gap-4"
                   >
                     <div className="flex items-center space-x-2">
@@ -152,8 +225,8 @@ const OnboardingForm = () => {
                   <Input
                     id="height"
                     type="number"
-                    value={userProfile.height}
-                    onChange={(e) => handleChange("height", e.target.value)}
+                    value={onboardingData.height || ""}
+                    onChange={(e) => handleChange("height", parseInt(e.target.value) || null)}
                     placeholder="Enter your height in cm"
                     min="100"
                     max="250"
@@ -165,8 +238,8 @@ const OnboardingForm = () => {
                   <Input
                     id="weight"
                     type="number"
-                    value={userProfile.weight}
-                    onChange={(e) => handleChange("weight", e.target.value)}
+                    value={onboardingData.current_weight || ""}
+                    onChange={(e) => handleChange("current_weight", parseFloat(e.target.value) || null)}
                     placeholder="Enter your weight in kg"
                     min="30"
                     max="300"
@@ -181,33 +254,33 @@ const OnboardingForm = () => {
                 <div className="space-y-2">
                   <Label>What's your main goal?</Label>
                   <RadioGroup
-                    value={userProfile.goal}
-                    onValueChange={(value) => handleChange("goal", value)}
+                    value={onboardingData.goal_type || "lose_weight"}
+                    onValueChange={(value: GoalTypeEnum) => handleChange("goal_type", value)}
                     className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
                   >
                     <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                      <RadioGroupItem value="weight_loss" id="goal-weight-loss" />
+                      <RadioGroupItem value="lose_weight" id="goal-weight-loss" />
                       <Label htmlFor="goal-weight-loss">Weight Loss</Label>
                     </div>
                     <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                      <RadioGroupItem value="maintenance" id="goal-maintenance" />
+                      <RadioGroupItem value="maintain_weight" id="goal-maintenance" />
                       <Label htmlFor="goal-maintenance">Maintenance</Label>
                     </div>
                     <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                      <RadioGroupItem value="muscle_gain" id="goal-muscle-gain" />
+                      <RadioGroupItem value="gain_weight" id="goal-muscle-gain" />
                       <Label htmlFor="goal-muscle-gain">Muscle Gain</Label>
                     </div>
                   </RadioGroup>
                 </div>
                 
-                {userProfile.goal === "weight_loss" && (
+                {onboardingData.goal_type === "lose_weight" && (
                   <div className="space-y-2">
                     <Label htmlFor="targetWeight">Target Weight (kg)</Label>
                     <Input
                       id="targetWeight"
                       type="number"
-                      value={userProfile.targetWeight}
-                      onChange={(e) => handleChange("targetWeight", e.target.value)}
+                      value={onboardingData.goal_weight || ""}
+                      onChange={(e) => handleChange("goal_weight", parseFloat(e.target.value) || null)}
                       placeholder="Enter your target weight"
                       min="30"
                       max="300"
@@ -218,18 +291,18 @@ const OnboardingForm = () => {
                 <div className="space-y-2">
                   <Label>How would you describe your activity level?</Label>
                   <Select
-                    value={userProfile.activityLevel}
-                    onValueChange={(value) => handleChange("activityLevel", value)}
+                    value={onboardingData.activity_level || "moderately_active"}
+                    onValueChange={(value: ActivityLevelEnum) => handleChange("activity_level", value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select activity level" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="sedentary">Sedentary (little to no exercise)</SelectItem>
-                      <SelectItem value="light">Light (light exercise 1-3 days/week)</SelectItem>
-                      <SelectItem value="moderate">Moderate (moderate exercise 3-5 days/week)</SelectItem>
-                      <SelectItem value="active">Active (hard exercise 6-7 days/week)</SelectItem>
-                      <SelectItem value="very_active">Very Active (hard daily exercise & physical job)</SelectItem>
+                      <SelectItem value="lightly_active">Light (light exercise 1-3 days/week)</SelectItem>
+                      <SelectItem value="moderately_active">Moderate (moderate exercise 3-5 days/week)</SelectItem>
+                      <SelectItem value="very_active">Active (hard exercise 6-7 days/week)</SelectItem>
+                      <SelectItem value="extremely_active">Very Active (hard daily exercise & physical job)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -238,11 +311,11 @@ const OnboardingForm = () => {
                   <Label>How many meals do you prefer per day?</Label>
                   <div className="pt-2">
                     <Slider
-                      value={[userProfile.mealsPerDay]}
+                      value={[localDietaryPreferences.mealsPerDay]}
                       min={2}
                       max={6}
                       step={1}
-                      onValueChange={(value) => handleChange("mealsPerDay", value[0])}
+                      onValueChange={(value) => handleLocalDietaryChange("mealsPerDay", value[0])}
                     />
                     <div className="flex justify-between mt-2 text-sm text-muted-foreground">
                       <span>2</span>
@@ -252,7 +325,7 @@ const OnboardingForm = () => {
                       <span>6</span>
                     </div>
                   </div>
-                  <p className="text-center mt-2">{userProfile.mealsPerDay} meals per day</p>
+                  <p className="text-center mt-2">{localDietaryPreferences.mealsPerDay} meals per day</p>
                 </div>
               </div>
             </TabsContent>
@@ -263,8 +336,8 @@ const OnboardingForm = () => {
                 <div className="space-y-2">
                   <Label>Dietary Preferences</Label>
                   <Select
-                    value={userProfile.diet}
-                    onValueChange={(value) => handleChange("diet", value)}
+                    value={localDietaryPreferences.diet}
+                    onValueChange={(value) => handleLocalDietaryChange("diet", value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select diet type" />
@@ -290,7 +363,7 @@ const OnboardingForm = () => {
                       <div key={allergy} className="flex items-center space-x-2">
                         <Checkbox
                           id={`allergy-${allergy}`}
-                          checked={userProfile.allergies.includes(allergy)}
+                          checked={localDietaryPreferences.allergies.includes(allergy)}
                           onCheckedChange={() => handleAllergiesChange(allergy)}
                         />
                         <Label htmlFor={`allergy-${allergy}`} className="capitalize">
@@ -305,8 +378,8 @@ const OnboardingForm = () => {
                   <Label htmlFor="avoidFoods">Foods you want to avoid</Label>
                   <Textarea
                     id="avoidFoods"
-                    value={userProfile.avoidFoods}
-                    onChange={(e) => handleChange("avoidFoods", e.target.value)}
+                    value={localDietaryPreferences.avoidFoods}
+                    onChange={(e) => handleLocalDietaryChange("avoidFoods", e.target.value)}
                     placeholder="List any specific foods you want to avoid"
                     rows={3}
                   />
@@ -315,8 +388,8 @@ const OnboardingForm = () => {
                 <div className="space-y-2">
                   <Label>Budget Preference</Label>
                   <RadioGroup
-                    value={userProfile.budget}
-                    onValueChange={(value) => handleChange("budget", value)}
+                    value={localDietaryPreferences.budget}
+                    onValueChange={(value) => handleLocalDietaryChange("budget", value)}
                     className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
                   >
                     <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
@@ -337,8 +410,8 @@ const OnboardingForm = () => {
                 <div className="space-y-2">
                   <Label>Cooking Time Preference</Label>
                   <Select
-                    value={userProfile.preparationTime}
-                    onValueChange={(value) => handleChange("preparationTime", value)}
+                    value={localDietaryPreferences.preparationTime}
+                    onValueChange={(value) => handleLocalDietaryChange("preparationTime", value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select cooking time preference" />
@@ -370,8 +443,8 @@ const OnboardingForm = () => {
               Next
             </Button>
           ) : (
-            <Button type="submit">
-              Complete Setup
+            <Button type="submit" disabled={profileLoading}>
+              {profileLoading ? "Saving..." : "Complete Setup"}
             </Button>
           )}
         </CardFooter>

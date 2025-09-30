@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -6,35 +5,66 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useFoodEntries } from "@/hooks/useFoodEntries";
+import { MealTypeEnum } from "@/lib/supabase";
 
 interface AddFoodEntryDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onEntryAdded?: () => void; // Callback to refresh dashboard data
 }
 
-const AddFoodEntryDialog = ({ isOpen, onOpenChange }: AddFoodEntryDialogProps) => {
+const AddFoodEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddFoodEntryDialogProps) => {
+  const { addEntry } = useFoodEntries();
   const [newFoodEntry, setNewFoodEntry] = useState({
-    name: "",
+    food_name: "",
     calories: "",
-    mealType: "breakfast" as "breakfast" | "lunch" | "dinner" | "snack"
+    protein: "",
+    carbs: "",
+    fat: "",
+    meal_type: "breakfast" as MealTypeEnum,
+    entry_date: new Date().toISOString().split('T')[0], // Current date
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSaveFoodEntry = () => {
-    if (!newFoodEntry.name || !newFoodEntry.calories) {
-      toast.error("Please fill all required fields");
+  const handleSaveFoodEntry = async () => {
+    if (!newFoodEntry.food_name || !newFoodEntry.calories) {
+      toast.error("Please fill in food name and calories.");
       return;
     }
 
-    // In a real app, you would save this to your database
-    toast.success(`Added ${newFoodEntry.name} to your ${newFoodEntry.mealType}`);
-    
-    // Reset form and close dialog
-    setNewFoodEntry({
-      name: "",
-      calories: "",
-      mealType: "breakfast"
-    });
-    onOpenChange(false);
+    setIsLoading(true);
+    try {
+      await addEntry({
+        food_name: newFoodEntry.food_name,
+        calories: parseInt(newFoodEntry.calories),
+        protein: parseInt(newFoodEntry.protein) || 0,
+        carbs: parseInt(newFoodEntry.carbs) || 0,
+        fat: parseInt(newFoodEntry.fat) || 0,
+        meal_type: newFoodEntry.meal_type,
+        entry_date: newFoodEntry.entry_date,
+      });
+      
+      // Reset form and close dialog
+      setNewFoodEntry({
+        food_name: "",
+        calories: "",
+        protein: "",
+        carbs: "",
+        fat: "",
+        meal_type: "breakfast",
+        entry_date: new Date().toISOString().split('T')[0],
+      });
+      onOpenChange(false);
+      if (onEntryAdded) {
+        onEntryAdded();
+      }
+    } catch (error) {
+      console.error("Error adding food entry:", error);
+      toast.error("Failed to add food entry.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -53,10 +83,11 @@ const AddFoodEntryDialog = ({ isOpen, onOpenChange }: AddFoodEntryDialogProps) =
             </Label>
             <Input
               id="food-name"
-              value={newFoodEntry.name}
-              onChange={(e) => setNewFoodEntry({...newFoodEntry, name: e.target.value})}
+              value={newFoodEntry.food_name}
+              onChange={(e) => setNewFoodEntry({...newFoodEntry, food_name: e.target.value})}
               className="col-span-3"
               placeholder="e.g., Grilled Chicken Salad"
+              required
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -70,6 +101,50 @@ const AddFoodEntryDialog = ({ isOpen, onOpenChange }: AddFoodEntryDialogProps) =
               className="col-span-3"
               type="number"
               placeholder="e.g., 350"
+              min="0"
+              required
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="protein" className="text-right">
+              Protein (g)
+            </Label>
+            <Input
+              id="protein"
+              value={newFoodEntry.protein}
+              onChange={(e) => setNewFoodEntry({...newFoodEntry, protein: e.target.value})}
+              className="col-span-3"
+              type="number"
+              placeholder="e.g., 30"
+              min="0"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="carbs" className="text-right">
+              Carbs (g)
+            </Label>
+            <Input
+              id="carbs"
+              value={newFoodEntry.carbs}
+              onChange={(e) => setNewFoodEntry({...newFoodEntry, carbs: e.target.value})}
+              className="col-span-3"
+              type="number"
+              placeholder="e.g., 15"
+              min="0"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="fat" className="text-right">
+              Fat (g)
+            </Label>
+            <Input
+              id="fat"
+              value={newFoodEntry.fat}
+              onChange={(e) => setNewFoodEntry({...newFoodEntry, fat: e.target.value})}
+              className="col-span-3"
+              type="number"
+              placeholder="e.g., 18"
+              min="0"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -77,10 +152,10 @@ const AddFoodEntryDialog = ({ isOpen, onOpenChange }: AddFoodEntryDialogProps) =
               Meal
             </Label>
             <Select
-              value={newFoodEntry.mealType}
-              onValueChange={(value) => setNewFoodEntry({
+              value={newFoodEntry.meal_type}
+              onValueChange={(value: MealTypeEnum) => setNewFoodEntry({
                 ...newFoodEntry, 
-                mealType: value as "breakfast" | "lunch" | "dinner" | "snack"
+                meal_type: value
               })}
             >
               <SelectTrigger className="col-span-3">
@@ -94,13 +169,25 @@ const AddFoodEntryDialog = ({ isOpen, onOpenChange }: AddFoodEntryDialogProps) =
               </SelectContent>
             </Select>
           </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="entry-date" className="text-right">
+              Date
+            </Label>
+            <Input
+              id="entry-date"
+              value={newFoodEntry.entry_date}
+              onChange={(e) => setNewFoodEntry({...newFoodEntry, entry_date: e.target.value})}
+              className="col-span-3"
+              type="date"
+            />
+          </div>
         </div>
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleSaveFoodEntry}>
-            Save
+          <Button onClick={handleSaveFoodEntry} disabled={isLoading}>
+            {isLoading ? "Saving..." : "Save"}
           </Button>
         </div>
       </DialogContent>

@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,28 +14,26 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { BadgeCheck, Bell, UserCog, Lock, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/providers/AuthProvider";
+import { useProfile } from "@/hooks/useProfile";
+import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum } from "@/lib/supabase";
 
 const Settings = () => {
-  const [userProfile, setUserProfile] = useState<any>(
-    JSON.parse(localStorage.getItem("userProfile") || "{}") || {
-      name: "",
-      age: "",
-      gender: "",
-      height: "",
-      weight: "",
-      goal: "weight_loss",
-      targetWeight: "",
-      activityLevel: "moderate",
-      diet: "no_restrictions",
-      allergies: [],
-      avoidFoods: "",
-      mealsPerDay: 3,
-      snacksPerDay: 1,
-      preparationTime: "moderate",
-      cookingSkill: "beginner",
-      budget: "medium",
-    }
-  );
+  const { user, signOut } = useAuth();
+  const { profile, updateProfile, loading: profileLoading } = useProfile();
+  const [localProfile, setLocalProfile] = useState<Partial<Profile>>({});
+
+  // Local state for preferences not directly in Supabase 'profiles' table
+  const [localDietaryPreferences, setLocalDietaryPreferences] = useState({
+    diet: "no_restrictions",
+    allergies: [] as string[],
+    avoidFoods: "",
+    mealsPerDay: 3,
+    snacksPerDay: 1,
+    preparationTime: "moderate",
+    cookingSkill: "beginner",
+    budget: "medium",
+  });
 
   const [notifications, setNotifications] = useState({
     mealReminders: true,
@@ -47,31 +44,38 @@ const Settings = () => {
     pushNotifications: true,
   });
 
-  const handleProfileChange = (field: string, value: any) => {
-    setUserProfile((prev: any) => {
-      const updatedProfile = { ...prev, [field]: value };
-      localStorage.setItem("userProfile", JSON.stringify(updatedProfile));
-      return updatedProfile;
-    });
+  useEffect(() => {
+    if (profile) {
+      setLocalProfile({
+        full_name: profile.full_name || "",
+        age: profile.age,
+        gender: profile.gender,
+        height: profile.height,
+        current_weight: profile.current_weight,
+        goal_type: profile.goal_type,
+        goal_weight: profile.goal_weight,
+        activity_level: profile.activity_level,
+      });
+      // For now, dietary preferences are not stored in Supabase 'profiles' table
+      // If they were, you would load them here.
+    }
+  }, [profile]);
+
+  const handleProfileChange = (field: keyof Profile, value: any) => {
+    setLocalProfile((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleLocalDietaryChange = (field: string, value: any) => {
+    setLocalDietaryPreferences((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleAllergiesChange = (allergy: string) => {
-    setUserProfile((prev: any) => {
-      const allergies = [...(prev.allergies || [])];
+    setLocalDietaryPreferences((prev) => {
+      const allergies = [...prev.allergies];
       if (allergies.includes(allergy)) {
-        const updatedProfile = { 
-          ...prev, 
-          allergies: allergies.filter((a) => a !== allergy) 
-        };
-        localStorage.setItem("userProfile", JSON.stringify(updatedProfile));
-        return updatedProfile;
+        return { ...prev, allergies: allergies.filter((a) => a !== allergy) };
       } else {
-        const updatedProfile = { 
-          ...prev, 
-          allergies: [...allergies, allergy] 
-        };
-        localStorage.setItem("userProfile", JSON.stringify(updatedProfile));
-        return updatedProfile;
+        return { ...prev, allergies: [...allergies, allergy] };
       }
     });
   };
@@ -80,26 +84,31 @@ const Settings = () => {
     setNotifications((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSaveChanges = () => {
-    // In a real application, this would send the updated profile to the backend
-    toast.success("Profile settings saved successfully");
+  const handleSaveChanges = async () => {
+    if (!user) {
+      toast.error("You must be logged in to save changes.");
+      return;
+    }
+    try {
+      await updateProfile(localProfile);
+      toast.success("Profile settings saved successfully!");
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast.error("Failed to save profile settings.");
+    }
   };
 
   const handleDeleteAccount = () => {
-    // In a real application, this would send a request to delete the account
-    toast.info("Account deletion would be processed here");
+    toast.info("Account deletion functionality is not yet implemented.");
   };
 
   const handleResetPassword = () => {
-    // In a real application, this would send a password reset email
-    toast.info("Password reset email would be sent here");
+    toast.info("Password reset functionality is not yet implemented.");
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("userEmail");
-    toast.success("Logged out successfully");
-    window.location.href = "/login";
+  const handleLogout = async () => {
+    await signOut();
+    // The AuthProvider will handle navigation to /login after signOut
   };
 
   return (
@@ -140,8 +149,8 @@ const Settings = () => {
                     <Label htmlFor="name">Full Name</Label>
                     <Input
                       id="name"
-                      value={userProfile.name || ""}
-                      onChange={(e) => handleProfileChange("name", e.target.value)}
+                      value={localProfile.full_name || ""}
+                      onChange={(e) => handleProfileChange("full_name", e.target.value)}
                       placeholder="Enter your name"
                     />
                   </div>
@@ -151,8 +160,8 @@ const Settings = () => {
                     <Input
                       id="age"
                       type="number"
-                      value={userProfile.age || ""}
-                      onChange={(e) => handleProfileChange("age", e.target.value)}
+                      value={localProfile.age || ""}
+                      onChange={(e) => handleProfileChange("age", parseInt(e.target.value) || null)}
                       placeholder="Enter your age"
                       min="18"
                       max="100"
@@ -162,8 +171,8 @@ const Settings = () => {
                   <div className="space-y-2">
                     <Label>Gender</Label>
                     <RadioGroup
-                      value={userProfile.gender || ""}
-                      onValueChange={(value) => handleProfileChange("gender", value)}
+                      value={localProfile.gender || ""}
+                      onValueChange={(value: GenderEnum) => handleProfileChange("gender", value)}
                       className="flex gap-4"
                     >
                       <div className="flex items-center space-x-2">
@@ -186,8 +195,8 @@ const Settings = () => {
                     <Input
                       id="height"
                       type="number"
-                      value={userProfile.height || ""}
-                      onChange={(e) => handleProfileChange("height", e.target.value)}
+                      value={localProfile.height || ""}
+                      onChange={(e) => handleProfileChange("height", parseInt(e.target.value) || null)}
                       placeholder="Enter your height in cm"
                       min="100"
                       max="250"
@@ -199,8 +208,8 @@ const Settings = () => {
                     <Input
                       id="weight"
                       type="number"
-                      value={userProfile.weight || ""}
-                      onChange={(e) => handleProfileChange("weight", e.target.value)}
+                      value={localProfile.current_weight || ""}
+                      onChange={(e) => handleProfileChange("current_weight", parseFloat(e.target.value) || null)}
                       placeholder="Enter your weight in kg"
                       min="30"
                       max="300"
@@ -212,8 +221,8 @@ const Settings = () => {
                     <Input
                       id="targetWeight"
                       type="number"
-                      value={userProfile.targetWeight || ""}
-                      onChange={(e) => handleProfileChange("targetWeight", e.target.value)}
+                      value={localProfile.goal_weight || ""}
+                      onChange={(e) => handleProfileChange("goal_weight", parseFloat(e.target.value) || null)}
                       placeholder="Enter your target weight"
                       min="30"
                       max="300"
@@ -227,20 +236,20 @@ const Settings = () => {
                   <div className="space-y-2">
                     <Label>What's your main goal?</Label>
                     <RadioGroup
-                      value={userProfile.goal || "weight_loss"}
-                      onValueChange={(value) => handleProfileChange("goal", value)}
+                      value={localProfile.goal_type || "lose_weight"}
+                      onValueChange={(value: GoalTypeEnum) => handleProfileChange("goal_type", value)}
                       className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
                     >
                       <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                        <RadioGroupItem value="weight_loss" id="goal-weight-loss" />
+                        <RadioGroupItem value="lose_weight" id="goal-weight-loss" />
                         <Label htmlFor="goal-weight-loss">Weight Loss</Label>
                       </div>
                       <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                        <RadioGroupItem value="maintenance" id="goal-maintenance" />
+                        <RadioGroupItem value="maintain_weight" id="goal-maintenance" />
                         <Label htmlFor="goal-maintenance">Maintenance</Label>
                       </div>
                       <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                        <RadioGroupItem value="muscle_gain" id="goal-muscle-gain" />
+                        <RadioGroupItem value="gain_weight" id="goal-muscle-gain" />
                         <Label htmlFor="goal-muscle-gain">Muscle Gain</Label>
                       </div>
                     </RadioGroup>
@@ -249,25 +258,25 @@ const Settings = () => {
                   <div className="space-y-2">
                     <Label>How would you describe your activity level?</Label>
                     <Select
-                      value={userProfile.activityLevel || "moderate"}
-                      onValueChange={(value) => handleProfileChange("activityLevel", value)}
+                      value={localProfile.activity_level || "moderately_active"}
+                      onValueChange={(value: ActivityLevelEnum) => handleProfileChange("activity_level", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select activity level" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="sedentary">Sedentary (little to no exercise)</SelectItem>
-                        <SelectItem value="light">Light (light exercise 1-3 days/week)</SelectItem>
-                        <SelectItem value="moderate">Moderate (moderate exercise 3-5 days/week)</SelectItem>
-                        <SelectItem value="active">Active (hard exercise 6-7 days/week)</SelectItem>
-                        <SelectItem value="very_active">Very Active (hard daily exercise & physical job)</SelectItem>
+                        <SelectItem value="lightly_active">Light (light exercise 1-3 days/week)</SelectItem>
+                        <SelectItem value="moderately_active">Moderate (moderate exercise 3-5 days/week)</SelectItem>
+                        <SelectItem value="very_active">Active (hard exercise 6-7 days/week)</SelectItem>
+                        <SelectItem value="extremely_active">Very Active (hard daily exercise & physical job)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
-                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                <Button onClick={handleSaveChanges} disabled={profileLoading}>Save Changes</Button>
               </CardFooter>
             </Card>
             
@@ -283,8 +292,8 @@ const Settings = () => {
                   <div className="space-y-2">
                     <Label>Dietary Preferences</Label>
                     <Select
-                      value={userProfile.diet || "no_restrictions"}
-                      onValueChange={(value) => handleProfileChange("diet", value)}
+                      value={localDietaryPreferences.diet}
+                      onValueChange={(value) => handleLocalDietaryChange("diet", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select diet type" />
@@ -310,7 +319,7 @@ const Settings = () => {
                         <div key={allergy} className="flex items-center space-x-2">
                           <Checkbox
                             id={`allergy-${allergy}`}
-                            checked={(userProfile.allergies || []).includes(allergy)}
+                            checked={localDietaryPreferences.allergies.includes(allergy)}
                             onCheckedChange={() => handleAllergiesChange(allergy)}
                           />
                           <Label htmlFor={`allergy-${allergy}`} className="capitalize">
@@ -325,8 +334,8 @@ const Settings = () => {
                     <Label htmlFor="avoidFoods">Foods you want to avoid</Label>
                     <Textarea
                       id="avoidFoods"
-                      value={userProfile.avoidFoods || ""}
-                      onChange={(e) => handleProfileChange("avoidFoods", e.target.value)}
+                      value={localDietaryPreferences.avoidFoods}
+                      onChange={(e) => handleLocalDietaryChange("avoidFoods", e.target.value)}
                       placeholder="List any specific foods you want to avoid"
                       rows={3}
                     />
@@ -336,11 +345,11 @@ const Settings = () => {
                     <Label>How many meals do you prefer per day?</Label>
                     <div className="pt-2">
                       <Slider
-                        value={[userProfile.mealsPerDay || 3]}
+                        value={[localDietaryPreferences.mealsPerDay]}
                         min={2}
                         max={6}
                         step={1}
-                        onValueChange={(value) => handleProfileChange("mealsPerDay", value[0])}
+                        onValueChange={(value) => handleLocalDietaryChange("mealsPerDay", value[0])}
                       />
                       <div className="flex justify-between mt-2 text-sm text-muted-foreground">
                         <span>2</span>
@@ -350,14 +359,14 @@ const Settings = () => {
                         <span>6</span>
                       </div>
                     </div>
-                    <p className="text-center mt-2">{userProfile.mealsPerDay || 3} meals per day</p>
+                    <p className="text-center mt-2">{localDietaryPreferences.mealsPerDay} meals per day</p>
                   </div>
                   
                   <div className="space-y-2">
                     <Label>Budget Preference</Label>
                     <RadioGroup
-                      value={userProfile.budget || "medium"}
-                      onValueChange={(value) => handleProfileChange("budget", value)}
+                      value={localDietaryPreferences.budget}
+                      onValueChange={(value) => handleLocalDietaryChange("budget", value)}
                       className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
                     >
                       <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
@@ -378,8 +387,8 @@ const Settings = () => {
                   <div className="space-y-2">
                     <Label>Cooking Time Preference</Label>
                     <Select
-                      value={userProfile.preparationTime || "moderate"}
-                      onValueChange={(value) => handleProfileChange("preparationTime", value)}
+                      value={localDietaryPreferences.preparationTime}
+                      onValueChange={(value) => handleLocalDietaryChange("preparationTime", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select cooking time preference" />
@@ -394,7 +403,7 @@ const Settings = () => {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
-                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                <Button onClick={handleSaveChanges} disabled={profileLoading}>Save Changes</Button>
               </CardFooter>
             </Card>
           </TabsContent>
@@ -498,7 +507,7 @@ const Settings = () => {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
-                <Button onClick={handleSaveChanges}>Save Preferences</Button>
+                <Button onClick={handleSaveChanges} disabled={profileLoading}>Save Preferences</Button>
               </CardFooter>
             </Card>
           </TabsContent>
@@ -516,11 +525,11 @@ const Settings = () => {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary">
                     <span className="text-2xl font-semibold text-primary-foreground">
-                      {localStorage.getItem("userEmail") ? localStorage.getItem("userEmail")![0].toUpperCase() : "U"}
+                      {user?.email ? user.email[0].toUpperCase() : "U"}
                     </span>
                   </div>
                   <div>
-                    <p className="font-medium">{localStorage.getItem("userEmail") || "User"}</p>
+                    <p className="font-medium">{user?.email || "User"}</p>
                     <p className="text-sm text-muted-foreground">Free Plan</p>
                   </div>
                   <div className="ml-auto flex items-center text-primary">
@@ -535,11 +544,11 @@ const Settings = () => {
                   <h3 className="text-lg font-medium">Email Address</h3>
                   <div className="flex items-center gap-2">
                     <Input
-                      value={localStorage.getItem("userEmail") || ""}
+                      value={user?.email || ""}
                       disabled
                       className="flex-grow"
                     />
-                    <Button variant="outline">Change</Button>
+                    <Button variant="outline" disabled>Change</Button> {/* Change email not implemented */}
                   </div>
                   <p className="text-sm text-muted-foreground">
                     This is the email address associated with your account
@@ -563,7 +572,7 @@ const Settings = () => {
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Data & Privacy</h3>
                   <div className="flex space-x-2">
-                    <Button variant="outline">Download My Data</Button>
+                    <Button variant="outline" disabled>Download My Data</Button> {/* Download data not implemented */}
                     <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10" onClick={handleDeleteAccount}>
                       Delete Account
                     </Button>
@@ -574,10 +583,10 @@ const Settings = () => {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between">
-                <Button variant="outline" className="flex items-center gap-2 text-destructive border-destructive hover:bg-destructive/10" onClick={handleLogout}>
+                <Button variant="outline" className="flex items-center gap-2 text-destructive border-destructive hover:bg-destructive/10" onClick={handleLogout} disabled={profileLoading}>
                   <LogOut className="h-4 w-4" /> Logout
                 </Button>
-                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                <Button onClick={handleSaveChanges} disabled={profileLoading}>Save Changes</Button>
               </CardFooter>
             </Card>
           </TabsContent>

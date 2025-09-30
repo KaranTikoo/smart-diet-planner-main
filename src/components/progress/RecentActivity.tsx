@@ -14,7 +14,8 @@ interface RecentActivityProps {
 }
 
 const RecentActivity = ({ entries }: RecentActivityProps) => {
-  const filteredEntries = entries.filter(entry => entry.calories > 0 || entry.weight > 0);
+  // Filter out entries that are completely zero (no calories and no weight)
+  const meaningfulEntries = entries.filter(entry => entry.calories > 0 || entry.weight > 0);
 
   return (
     <Card className="lg:col-span-2">
@@ -28,31 +29,32 @@ const RecentActivity = ({ entries }: RecentActivityProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {filteredEntries.length === 0 ? (
+          {meaningfulEntries.length === 0 ? (
             <div className="text-center py-4 text-muted-foreground">
               No recent entries. Add your first entry!
             </div>
           ) : (
-            filteredEntries.slice(0, 5).map((entry, index) => (
+            meaningfulEntries.slice(0, 5).map((entry, index) => (
               <div key={index} className="flex justify-between border-b pb-3 last:border-0">
                 <div>
                   <p className="font-medium">{entry.day}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {entry.calories} calories
-                  </p>
+                  {entry.calories > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      {entry.calories} calories ({entry.protein}g P / {entry.carbs}g C / {entry.fat}g F)
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
-                  <p className="font-medium">{entry.weight} kg</p>
-                  <p className="text-sm text-muted-foreground">
-                    {entry.carbs}g C / {entry.protein}g P / {entry.fat}g F
-                  </p>
+                  {entry.weight > 0 && (
+                    <p className="font-medium">{entry.weight} kg</p>
+                  )}
                 </div>
               </div>
             ))
           )}
         </div>
         
-        {filteredEntries.length > 0 && (
+        {meaningfulEntries.length > 0 && (
           <div className="mt-4">
             <Button variant="outline" className="w-full">
               View All Entries

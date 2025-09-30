@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,9 +7,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { useAuth } from "@/providers/AuthProvider"; // Import useAuth
 
 const AuthForm = () => {
   const navigate = useNavigate();
+  const { signIn, signUp, loading: authLoading } = useAuth(); // Use the useAuth hook
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [authData, setAuthData] = useState({
@@ -35,34 +36,34 @@ const AuthForm = () => {
     return true;
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
     
     setIsLoading(true);
-    // Mock login - Replace with actual authentication
-    setTimeout(() => {
-      setIsLoading(false);
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userEmail", authData.email);
-      toast.success("Login successful!");
+    const { error } = await signIn(authData.email, authData.password);
+    setIsLoading(false);
+
+    if (!error) {
       navigate("/dashboard");
-    }, 1000);
+    }
   };
   
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
     
     setIsLoading(true);
-    // Mock signup - Replace with actual authentication
-    setTimeout(() => {
-      setIsLoading(false);
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userEmail", authData.email);
-      toast.success("Account created successfully!");
+    const { error } = await signUp(authData.email, authData.password);
+    setIsLoading(false);
+
+    if (!error) {
+      // Supabase sends a verification email, then user can log in.
+      // For a smoother UX, we might redirect to onboarding after successful signup,
+      // assuming email verification happens in the background or is not strictly enforced for onboarding.
+      // For now, we'll redirect to onboarding.
       navigate("/onboarding");
-    }, 1000);
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -127,8 +128,8 @@ const AuthForm = () => {
                 </div>
               </div>
               
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+              <Button type="submit" className="w-full" disabled={isLoading || authLoading}>
+                {isLoading || authLoading ? "Logging in..." : "Login"}
               </Button>
             </form>
           </TabsContent>
@@ -176,8 +177,8 @@ const AuthForm = () => {
                 </div>
               </div>
               
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create Account"}
+              <Button type="submit" className="w-full" disabled={isLoading || authLoading}>
+                {isLoading || authLoading ? "Creating account..." : "Create Account"}
               </Button>
             </form>
           </TabsContent>

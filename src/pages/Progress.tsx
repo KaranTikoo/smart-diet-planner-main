@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
 
 // Import refactored components
 import ProgressHeader from "@/components/progress/ProgressHeader";
@@ -11,52 +12,90 @@ import CalorieIntakeChart from "@/components/progress/CalorieIntakeChart";
 import MacronutrientBreakdown from "@/components/progress/MacronutrientBreakdown";
 import RecentActivity from "@/components/progress/RecentActivity";
 import AddEntryDialog from "@/components/progress/AddEntryDialog";
-import { weeklyData, generateMonthlyData } from "@/components/progress/mockData";
+
+import { useWeightEntries } from "@/hooks/useWeightEntries";
+import { useFoodEntries } from "@/hooks/useFoodEntries";
+import { useAuth } from "@/providers/AuthProvider";
 
 const Progress = () => {
+  const { user } = useAuth();
   const [period, setPeriod] = useState("week");
   const [isAddEntryDialogOpen, setIsAddEntryDialogOpen] = useState(false);
-  const [newEntry, setNewEntry] = useState({
-    weight: "",
-    calories: "",
-    date: new Date().toISOString().split('T')[0],
+
+  const today = new Date();
+  const startDate = period === "week" ? startOfWeek(today, { weekStartsOn: 1 }) : startOfMonth(today);
+  const endDate = period === "week" ? endOfWeek(today, { weekStartsOn: 1 }) : endOfMonth(today);
+
+  const { entries: weightEntries, loading: weightLoading, refetch: refetchWeightEntries } = useWeightEntries();
+  const { entries: foodEntries, loading: foodLoading, refetch: refetchFoodEntries } = useFoodEntries();
+
+  const handleEntryAdded = () => {
+    refetchWeightEntries();
+    refetchFoodEntries();
+  };
+
+  // Filter and process data based on the selected period
+  const filteredWeightEntries = weightEntries.filter(entry => {
+    const entryDate = new Date(entry.entry_date);
+    return entryDate >= startDate && entryDate <= endDate;
   });
+
+  const filteredFoodEntries = foodEntries.filter(entry => {
+    const entryDate = new Date(entry.entry_date);
+    return entryDate >= startDate && entryDate <= endDate;
+  });
+
+  // Generate data for charts
+  const chartDays = eachDayOfInterval({ start: startDate, end: endDate });
+  const weightChartData = chartDays.map(day => {
+    const formattedDay = format(day, 'MMM dd');
+    const entryForDay = filteredWeightEntries.find(entry => format(new Date(entry.entry_date), 'MMM dd') === formattedDay);
+    return {
+      day: formattedDay,
+      weight: entryForDay ? entryForDay.weight : null, // Use null for missing data points
+    };
+  }).filter(data => data.weight !== null); // Filter out days with no weight entries
+
+  const calorieChartData = chartDays.map(day => {
+    const formattedDay = format(day, 'MMM dd');
+    const caloriesForDay = filteredFoodEntries
+      .filter(entry => format(new Date(entry.entry_date), 'MMM dd') === formattedDay)
+      .reduce((sum, entry) => sum + entry.calories, 0);
+    return {
+      day: formattedDay,
+      calories: caloriesForDay,
+    };
+  });
+
+  // Calculate summary metrics
+  const currentWeight = filteredWeightEntries.length > 0 
+    ? filteredWeightEntries.sort((a, b) => new Date(b.entry_date).getTime() - new Date(a.entry_date).getTime())[0].weight
+    : 0;
+
+  const initialWeight = filteredWeightEntries.length > 0 
+    ? filteredWeightEntries.sort((a, b) => new Date(a.entry_date).getTime() - new Date(b.entry_date).getTime())[0].weight
+    : 0;
   
-  // Generate monthly data
-  const monthlyData = generateMonthlyData();
-  
-  // Calculate metrics from the (initially zeroed) data
-  const currentData = period === "week" ? weeklyData : monthlyData;
-  
-  const weightChange = currentData.length > 1 
-    ? parseFloat((currentData[currentData.length - 1].weight - currentData[0].weight).toFixed(1))
+  const weightChange = currentWeight !== 0 && initialWeight !== 0 
+    ? parseFloat((currentWeight - initialWeight).toFixed(1))
     : 0;
   const isWeightLoss = weightChange < 0;
-  
-  const totalCalories = currentData.reduce((sum, day) => sum + day.calories, 0);
-  const averageCalories = currentData.length > 0 ? Math.round(totalCalories / currentData.length) : 0;
-  
+
+  const totalCaloriesConsumed = filteredFoodEntries.reduce((sum, entry) => sum + entry.calories, 0);
+  const averageCalories = chartDays.length > 0 ? Math.round(totalCaloriesConsumed / chartDays.length) : 0;
+
+  const totalProtein = filteredFoodEntries.reduce((sum, entry) => sum + (entry.protein || 0), 0);
+  const totalCarbs = filteredFoodEntries.reduce((sum, entry) => sum + (entry.carbs || 0), 0);
+  const totalFat = filteredFoodEntries.reduce((sum, entry) => sum + (entry.fat || 0), 0);
+
   const averageMacros = {
-    carbs: currentData.length > 0 ? Math.round(currentData.reduce((sum, day) => sum + day.carbs, 0) / currentData.length) : 0,
-    protein: currentData.length > 0 ? Math.round(currentData.reduce((sum, day) => sum + day.protein, 0) / currentData.length) : 0,
-    fat: currentData.length > 0 ? Math.round(currentData.reduce((sum, day) => sum + day.fat, 0) / currentData.length) : 0,
+    carbs: chartDays.length > 0 ? Math.round(totalCarbs / chartDays.length) : 0,
+    protein: chartDays.length > 0 ? Math.round(totalProtein / chartDays.length) : 0,
+    fat: chartDays.length > 0 ? Math.round(totalFat / chartDays.length) : 0,
   };
 
   const handleAddEntry = () => {
     setIsAddEntryDialogOpen(true);
-  };
-
-  const handleSaveEntry = () => {
-    // In a real app, you would save this to your database
-    toast.success("Progress entry saved successfully");
-    
-    // Reset form and close dialog
-    setNewEntry({
-      weight: "",
-      calories: "",
-      date: new Date().toISOString().split('T')[0],
-    });
-    setIsAddEntryDialogOpen(false);
   };
 
   return (
@@ -71,7 +110,7 @@ const Progress = () => {
 
         {/* Summary Cards */}
         <SummaryCards 
-          currentWeight={currentData.length > 0 ? currentData[currentData.length - 1].weight : 0} 
+          currentWeight={currentWeight} 
           weightChange={weightChange}
           isWeightLoss={isWeightLoss}
           averageCalories={averageCalories}
@@ -79,23 +118,38 @@ const Progress = () => {
 
         {/* Main Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <WeightTrendChart data={currentData} />
-          <CalorieIntakeChart data={currentData} />
+          <WeightTrendChart data={weightChartData} />
+          <CalorieIntakeChart data={calorieChartData} />
         </div>
 
         {/* Macros and Details */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <MacronutrientBreakdown macros={averageMacros} caloriesAvg={averageCalories} />
-          <RecentActivity entries={currentData} />
+          <RecentActivity 
+            entries={
+              [...filteredWeightEntries.map(e => ({
+                day: format(new Date(e.entry_date), 'MMM dd'),
+                weight: e.weight,
+                calories: 0, protein: 0, carbs: 0, fat: 0, // Weight entries don't have macros
+              })),
+              ...filteredFoodEntries.map(e => ({
+                day: format(new Date(e.entry_date), 'MMM dd'),
+                calories: e.calories,
+                protein: e.protein || 0,
+                carbs: e.carbs || 0,
+                fat: e.fat || 0,
+                weight: 0, // Food entries don't have weight
+              }))]
+              .sort((a, b) => new Date(b.day).getTime() - new Date(a.day).getTime()) // Sort by date descending
+            } 
+          />
         </div>
 
         {/* Add Entry Dialog */}
         <AddEntryDialog
           isOpen={isAddEntryDialogOpen}
           onOpenChange={setIsAddEntryDialogOpen}
-          newEntry={newEntry}
-          setNewEntry={setNewEntry}
-          onSave={handleSaveEntry}
+          onEntryAdded={handleEntryAdded}
         />
       </div>
     </MainLayout>
