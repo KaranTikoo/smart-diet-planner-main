@@ -17,10 +17,10 @@ interface MealPlan {
 }
 
 interface TodaysMealPlanProps {
-  meals: MealPlan[];
+  meals?: MealPlan[]; // Make meals optional
 }
 
-const TodaysMealPlan = ({ meals }: TodaysMealPlanProps) => {
+const TodaysMealPlan = ({ meals = [] }: TodaysMealPlanProps) => { // Provide default empty array
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
