@@ -2,22 +2,23 @@ import { useState, useEffect } from 'react'
 import { supabase, Profile } from '@/lib/supabase'
 import { useAuth } from '@/providers/AuthProvider'
 import { toast } from 'sonner'
+import { User } from '@supabase/supabase-js' // Import User type
 
 export const useProfile = () => {
-  const { user } = useAuth()
+  const { user: authUser } = useAuth() // Renamed to avoid conflict with function param
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(false) // For initial fetch
   const [isSaving, setIsSaving] = useState(false); // For create/update operations
 
   const fetchProfile = async () => {
-    if (!user) return
+    if (!authUser) return // Use authUser here
 
     setLoading(true)
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', authUser.id) // Use authUser here
         .single()
 
       if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
@@ -33,11 +34,8 @@ export const useProfile = () => {
     }
   }
 
-  const saveProfile = async (updates: Partial<Profile>) => { // Renamed from updateProfile/createProfile to saveProfile
-    if (!user) {
-      toast.error('Authentication error: User not found for profile save operation.');
-      return;
-    }
+  // saveProfile now explicitly takes the user object
+  const saveProfile = async (user: User, updates: Partial<Profile>) => {
     if (!user.email) { // Explicit check for user.email
       toast.error('Authentication error: User email not found for profile save operation.');
       console.error('User object is missing email:', user);
@@ -73,7 +71,7 @@ export const useProfile = () => {
 
   useEffect(() => {
     fetchProfile()
-  }, [user])
+  }, [authUser]) // Depend on authUser
 
   return {
     profile,

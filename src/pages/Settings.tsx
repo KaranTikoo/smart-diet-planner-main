@@ -20,7 +20,7 @@ import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum } from "@/lib/supa
 
 const Settings = () => {
   const { user, signOut } = useAuth();
-  const { profile, updateProfile, loading: profileLoading } = useProfile();
+  const { profile, saveProfile, loading: profileLoading } = useProfile();
   const [localProfile, setLocalProfile] = useState<Partial<Profile>>({});
 
   // Local state for preferences not directly in Supabase 'profiles' table
@@ -90,7 +90,7 @@ const Settings = () => {
       return;
     }
     try {
-      await updateProfile(localProfile);
+      await saveProfile(user, localProfile); // Pass user here
       toast.success("Profile settings saved successfully!");
     } catch (error) {
       console.error("Error saving profile:", error);
@@ -404,110 +404,6 @@ const Settings = () => {
               </CardContent>
               <CardFooter className="flex justify-end">
                 <Button onClick={handleSaveChanges} disabled={profileLoading}>Save Changes</Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-          
-          {/* Notification Settings */}
-          <TabsContent value="notifications" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>
-                  Configure how and when you receive notifications
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="mealReminders">Meal Reminders</Label>
-                      <p className="text-sm text-muted-foreground">Receive reminders for your scheduled meals</p>
-                    </div>
-                    <Switch
-                      id="mealReminders"
-                      checked={notifications.mealReminders}
-                      onCheckedChange={(checked) => handleNotificationChange("mealReminders", checked)}
-                    />
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="weeklyReports">Weekly Reports</Label>
-                      <p className="text-sm text-muted-foreground">Receive weekly summary of your nutrition and progress</p>
-                    </div>
-                    <Switch
-                      id="weeklyReports"
-                      checked={notifications.weeklyReports}
-                      onCheckedChange={(checked) => handleNotificationChange("weeklyReports", checked)}
-                    />
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="goalAchievements">Goal Achievements</Label>
-                      <p className="text-sm text-muted-foreground">Notifications when you reach a milestone or goal</p>
-                    </div>
-                    <Switch
-                      id="goalAchievements"
-                      checked={notifications.goalAchievements}
-                      onCheckedChange={(checked) => handleNotificationChange("goalAchievements", checked)}
-                    />
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="mealPlans">New Meal Plans</Label>
-                      <p className="text-sm text-muted-foreground">Notifications when new meal plans are generated</p>
-                    </div>
-                    <Switch
-                      id="mealPlans"
-                      checked={notifications.mealPlans}
-                      onCheckedChange={(checked) => handleNotificationChange("mealPlans", checked)}
-                    />
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Notification Channels</h3>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="emailNotifications">Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive notifications via email</p>
-                    </div>
-                    <Switch
-                      id="emailNotifications"
-                      checked={notifications.emailNotifications}
-                      onCheckedChange={(checked) => handleNotificationChange("emailNotifications", checked)}
-                    />
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="pushNotifications">Push Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive push notifications on your device</p>
-                    </div>
-                    <Switch
-                      id="pushNotifications"
-                      checked={notifications.pushNotifications}
-                      onCheckedChange={(checked) => handleNotificationChange("pushNotifications", checked)}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-end">
-                <Button onClick={handleSaveChanges} disabled={profileLoading}>Save Preferences</Button>
               </CardFooter>
             </Card>
           </TabsContent>

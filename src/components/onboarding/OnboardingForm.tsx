@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum } from "@/lib/supabase";
+import { User } from '@supabase/supabase-js'; // Import User type
 
 const OnboardingForm = () => {
   const navigate = useNavigate();
@@ -81,8 +82,7 @@ const OnboardingForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Ensure user is available (guaranteed by RequireAuth, but good for type safety)
-    if (!user) {
+    if (!user) { // This check is crucial
       toast.error("Authentication error: User not found.");
       return;
     }
@@ -110,7 +110,7 @@ const OnboardingForm = () => {
       };
 
       // Always call saveProfile, which uses upsert
-      await saveProfile(profileDataToSave);
+      await saveProfile(user, profileDataToSave); // Pass user here
       
       toast.success("Profile created/updated successfully!");
       navigate("/dashboard");
