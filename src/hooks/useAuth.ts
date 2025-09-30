@@ -3,76 +3,30 @@ import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 
-// Fallback auth for when Supabase is not connected
-const createMockAuth = () => ({
-  user: null,
-  session: null,
-  loading: false,
-  signIn: async (email: string, password: string) => {
-    // Mock authentication
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("userEmail", email);
-    toast.success("Successfully signed in! (Using mock auth - connect Supabase for real auth)");
-    return { error: null };
-  },
-  signUp: async (email: string, password: string) => {
-    localStorage.setItem("isAuthenticated", "true");
-    localStorage.setItem("userEmail", email);
-    toast.success("Account created! (Using mock auth - connect Supabase for real auth)");
-    return { error: null };
-  },
-  signOut: async () => {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("userEmail");
-    toast.success("Successfully signed out!");
-  }
-})
-
-// AuthContextType is now defined in AuthProvider.tsx
-// interface AuthContextType {
-//   user: User | null
-//   session: Session | null
-//   loading: boolean
-//   signIn: (email: string, password: string) => Promise<{ error?: AuthError }>
-//   signUp: (email: string, password: string) => Promise<{ error?: AuthError }>
-//   signOut: () => Promise<void>
-// }
-
-// AuthContext is now created in AuthProvider.tsx
-// const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-// useAuth is now defined in AuthProvider.tsx
-// export const useAuth = () => {
-//   const context = useContext(AuthContext)
-//   if (!context) {
-//     throw new Error('useAuth must be used within an AuthProvider')
-//   }
-//   return context
-// }
-
 export const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Helper to create a mock user object
+  const createMockUser = (email: string): User => ({
+    id: 'mock-user-id',
+    email: email,
+    created_at: new Date().toISOString(),
+    app_metadata: {},
+    user_metadata: {},
+    aud: 'authenticated',
+    confirmed_at: new Date().toISOString()
+  });
+
   useEffect(() => {
     // If Supabase is not connected, use mock auth
     if (!supabase) {
-      // Check for mock authentication
       const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
       const userEmail = localStorage.getItem("userEmail");
       
       if (isAuthenticated && userEmail) {
-        // Create a mock user object
-        setUser({ 
-          id: 'mock-user-id', 
-          email: userEmail,
-          created_at: new Date().toISOString(),
-          app_metadata: {},
-          user_metadata: {},
-          aud: 'authenticated',
-          confirmed_at: new Date().toISOString()
-        } as User);
+        setUser(createMockUser(userEmail));
       }
       setLoading(false);
       return;
@@ -104,7 +58,13 @@ export const useAuthState = () => {
 
   const signIn = async (email: string, password: string) => {
     if (!supabase) {
-      return createMockAuth().signIn(email, password);
+      // Mock authentication logic
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userEmail", email);
+      setUser(createMockUser(email)); // Directly set mock user
+      setLoading(false); // Ensure loading is false after mock auth
+      toast.success("Successfully signed in! (Using mock auth - connect Supabase for real auth)");
+      return { error: null };
     }
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -121,7 +81,13 @@ export const useAuthState = () => {
 
   const signUp = async (email: string, password: string) => {
     if (!supabase) {
-      return createMockAuth().signUp(email, password);
+      // Mock authentication logic
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userEmail", email);
+      setUser(createMockUser(email)); // Directly set mock user
+      setLoading(false); // Ensure loading is false after mock auth
+      toast.success("Account created! (Using mock auth - connect Supabase for real auth)");
+      return { error: null };
     }
 
     const { error } = await supabase.auth.signUp({
@@ -140,7 +106,12 @@ export const useAuthState = () => {
 
   const signOut = async () => {
     if (!supabase) {
-      return createMockAuth().signOut();
+      localStorage.removeItem("isAuthenticated");
+      localStorage.removeItem("userEmail");
+      setUser(null); // Clear mock user
+      setLoading(false); // Ensure loading is false after mock auth
+      toast.success("Successfully signed out!");
+      return;
     }
 
     const { error } = await supabase.auth.signOut()
