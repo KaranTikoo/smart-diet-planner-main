@@ -17,7 +17,7 @@ import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum } from "@/lib/supa
 
 const OnboardingForm = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth(); // Get authLoading state
   const { profile, createProfile, updateProfile, loading: profileLoading } = useProfile();
   const [currentStep, setCurrentStep] = useState(1);
   const [onboardingData, setOnboardingData] = useState<Partial<Profile>>({
@@ -443,8 +443,8 @@ const OnboardingForm = () => {
               Next
             </Button>
           ) : (
-            <Button type="submit" disabled={profileLoading}>
-              {profileLoading ? "Saving..." : "Complete Setup"}
+            <Button type="submit" disabled={profileLoading || authLoading || !user}>
+              {profileLoading || authLoading ? "Saving..." : "Complete Setup"}
             </Button>
           )}
         </CardFooter>
