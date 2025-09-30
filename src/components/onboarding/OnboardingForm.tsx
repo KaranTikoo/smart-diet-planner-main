@@ -83,6 +83,9 @@ const OnboardingForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // The check for `!user` is now handled by the parent `Onboarding` component
+    // which will not render this form if `user` is null.
+    // However, keeping it here as a safeguard is good practice.
     if (!user) {
       toast.error("You must be logged in to complete onboarding.");
       return;
@@ -148,6 +151,9 @@ const OnboardingForm = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
+  // Disable the form if auth is still loading or if user is not present
+  const isFormDisabled = authLoading || !user || profileLoading;
+
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
@@ -161,13 +167,13 @@ const OnboardingForm = () => {
         <CardContent>
           <Tabs value={`step-${currentStep}`} className="w-full">
             <TabsList className="grid grid-cols-3">
-              <TabsTrigger value="step-1" onClick={() => setCurrentStep(1)}>
+              <TabsTrigger value="step-1" onClick={() => setCurrentStep(1)} disabled={isFormDisabled}>
                 Basic Information
               </TabsTrigger>
-              <TabsTrigger value="step-2" onClick={() => setCurrentStep(2)}>
+              <TabsTrigger value="step-2" onClick={() => setCurrentStep(2)} disabled={isFormDisabled}>
                 Goals & Activity
               </TabsTrigger>
-              <TabsTrigger value="step-3" onClick={() => setCurrentStep(3)}>
+              <TabsTrigger value="step-3" onClick={() => setCurrentStep(3)} disabled={isFormDisabled}>
                 Dietary Preferences
               </TabsTrigger>
             </TabsList>
@@ -182,6 +188,7 @@ const OnboardingForm = () => {
                     value={onboardingData.full_name || ""}
                     onChange={(e) => handleChange("full_name", e.target.value)}
                     placeholder="Enter your name"
+                    disabled={isFormDisabled}
                   />
                 </div>
                 
@@ -195,6 +202,7 @@ const OnboardingForm = () => {
                     placeholder="Enter your age"
                     min="18"
                     max="100"
+                    disabled={isFormDisabled}
                   />
                 </div>
                 
@@ -204,6 +212,7 @@ const OnboardingForm = () => {
                     value={onboardingData.gender || ""}
                     onValueChange={(value: GenderEnum) => handleChange("gender", value)}
                     className="flex gap-4"
+                    disabled={isFormDisabled}
                   >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="male" id="gender-male" />
@@ -230,6 +239,7 @@ const OnboardingForm = () => {
                     placeholder="Enter your height in cm"
                     min="100"
                     max="250"
+                    disabled={isFormDisabled}
                   />
                 </div>
                 
@@ -243,6 +253,7 @@ const OnboardingForm = () => {
                     placeholder="Enter your weight in kg"
                     min="30"
                     max="300"
+                    disabled={isFormDisabled}
                   />
                 </div>
               </div>
@@ -257,6 +268,7 @@ const OnboardingForm = () => {
                     value={onboardingData.goal_type || "lose_weight"}
                     onValueChange={(value: GoalTypeEnum) => handleChange("goal_type", value)}
                     className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
+                    disabled={isFormDisabled}
                   >
                     <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
                       <RadioGroupItem value="lose_weight" id="goal-weight-loss" />
@@ -284,6 +296,7 @@ const OnboardingForm = () => {
                       placeholder="Enter your target weight"
                       min="30"
                       max="300"
+                      disabled={isFormDisabled}
                     />
                   </div>
                 )}
@@ -293,6 +306,7 @@ const OnboardingForm = () => {
                   <Select
                     value={onboardingData.activity_level || "moderately_active"}
                     onValueChange={(value: ActivityLevelEnum) => handleChange("activity_level", value)}
+                    disabled={isFormDisabled}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select activity level" />
@@ -316,6 +330,7 @@ const OnboardingForm = () => {
                       max={6}
                       step={1}
                       onValueChange={(value) => handleLocalDietaryChange("mealsPerDay", value[0])}
+                      disabled={isFormDisabled}
                     />
                     <div className="flex justify-between mt-2 text-sm text-muted-foreground">
                       <span>2</span>
@@ -338,6 +353,7 @@ const OnboardingForm = () => {
                   <Select
                     value={localDietaryPreferences.diet}
                     onValueChange={(value) => handleLocalDietaryChange("diet", value)}
+                    disabled={isFormDisabled}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select diet type" />
@@ -365,6 +381,7 @@ const OnboardingForm = () => {
                           id={`allergy-${allergy}`}
                           checked={localDietaryPreferences.allergies.includes(allergy)}
                           onCheckedChange={() => handleAllergiesChange(allergy)}
+                          disabled={isFormDisabled}
                         />
                         <Label htmlFor={`allergy-${allergy}`} className="capitalize">
                           {allergy}
@@ -382,6 +399,7 @@ const OnboardingForm = () => {
                     onChange={(e) => handleLocalDietaryChange("avoidFoods", e.target.value)}
                     placeholder="List any specific foods you want to avoid"
                     rows={3}
+                    disabled={isFormDisabled}
                   />
                 </div>
                 
@@ -391,6 +409,7 @@ const OnboardingForm = () => {
                     value={localDietaryPreferences.budget}
                     onValueChange={(value) => handleLocalDietaryChange("budget", value)}
                     className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
+                    disabled={isFormDisabled}
                   >
                     <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
                       <RadioGroupItem value="low" id="budget-low" />
@@ -412,6 +431,7 @@ const OnboardingForm = () => {
                   <Select
                     value={localDietaryPreferences.preparationTime}
                     onValueChange={(value) => handleLocalDietaryChange("preparationTime", value)}
+                    disabled={isFormDisabled}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select cooking time preference" />
@@ -433,18 +453,18 @@ const OnboardingForm = () => {
             type="button"
             variant="outline"
             onClick={prevStep}
-            disabled={currentStep === 1}
+            disabled={currentStep === 1 || isFormDisabled}
           >
             Previous
           </Button>
           
           {currentStep < 3 ? (
-            <Button type="button" onClick={nextStep}>
+            <Button type="button" onClick={nextStep} disabled={isFormDisabled}>
               Next
             </Button>
           ) : (
-            <Button type="submit" disabled={profileLoading || authLoading || !user}>
-              {profileLoading || authLoading ? "Saving..." : "Complete Setup"}
+            <Button type="submit" disabled={isFormDisabled}>
+              {isFormDisabled ? "Loading..." : "Complete Setup"}
             </Button>
           )}
         </CardFooter>
