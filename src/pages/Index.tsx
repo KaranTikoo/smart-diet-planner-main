@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -198,10 +197,10 @@ const Index = () => {
               <div className="bg-background p-6 rounded-lg shadow">
                 <div className="flex items-center mb-4">
                   <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center mr-4">
-                    <span className="text-primary font-bold">JD</span>
+                    <span className="text-primary font-bold">AK</span>
                   </div>
                   <div>
-                    <h4 className="font-semibold">John Doe</h4>
+                    <h4 className="font-semibold">Ananya Kumar</h4>
                     <p className="text-sm text-muted-foreground">Lost 15kg in 3 months</p>
                   </div>
                 </div>
@@ -216,10 +215,10 @@ const Index = () => {
               <div className="bg-background p-6 rounded-lg shadow">
                 <div className="flex items-center mb-4">
                   <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center mr-4">
-                    <span className="text-primary font-bold">SM</span>
+                    <span className="text-primary font-bold">RS</span>
                   </div>
                   <div>
-                    <h4 className="font-semibold">Sarah Miller</h4>
+                    <h4 className="font-semibold">Rohan Sharma</h4>
                     <p className="text-sm text-muted-foreground">Manages diabetes effectively</p>
                   </div>
                 </div>
@@ -234,10 +233,10 @@ const Index = () => {
               <div className="bg-background p-6 rounded-lg shadow">
                 <div className="flex items-center mb-4">
                   <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center mr-4">
-                    <span className="text-primary font-bold">MJ</span>
+                    <span className="text-primary font-bold">PK</span>
                   </div>
                   <div>
-                    <h4 className="font-semibold">Mike Johnson</h4>
+                    <h4 className="font-semibold">Priya Kapoor</h4>
                     <p className="text-sm text-muted-foreground">Fitness enthusiast</p>
                   </div>
                 </div>
