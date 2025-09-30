@@ -33,8 +33,16 @@ export const useProfile = () => {
     }
   }
 
-  const updateProfile = async (updates: Partial<Profile>) => {
-    if (!user) return
+  const saveProfile = async (updates: Partial<Profile>) => { // Renamed from updateProfile/createProfile to saveProfile
+    if (!user) {
+      toast.error('Authentication error: User not found for profile save operation.');
+      return;
+    }
+    if (!user.email) { // Explicit check for user.email
+      toast.error('Authentication error: User email not found for profile save operation.');
+      console.error('User object is missing email:', user);
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -43,7 +51,7 @@ export const useProfile = () => {
         .upsert([
           {
             id: user.id,
-            email: user.email || '',
+            email: user.email, // Use user.email directly, as we've checked it's not null
             ...updates,
           },
         ])
@@ -53,42 +61,11 @@ export const useProfile = () => {
       if (error) throw error
       
       setProfile(data)
-      toast.success('Profile updated successfully!')
+      toast.success('Profile saved successfully!')
       return data
     } catch (error: any) {
-      console.error('Error updating profile:', error) // Log the full error object
-      toast.error(`Failed to update profile: ${error.message || 'Unknown error'}`) // Provide more specific toast message
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  // Modified createProfile to use upsert
-  const createProfile = async (profileData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>) => {
-    if (!user) return
-
-    setIsSaving(true);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .upsert([
-          {
-            id: user.id,
-            email: user.email || '',
-            ...profileData,
-          },
-        ])
-        .select()
-        .single()
-
-      if (error) throw error
-      
-      setProfile(data)
-      toast.success('Profile created successfully!')
-      return data
-    } catch (error: any) {
-      console.error('Error creating profile:', error) // Log the full error object
-      toast.error(`Failed to create profile: ${error.message || 'Unknown error'}`) // Provide more specific toast message
+      console.error('Error saving profile:', error) // Log the full error object
+      toast.error(`Failed to save profile: ${error.message || 'Unknown error'}`) // Provide more specific toast message
     } finally {
       setIsSaving(false);
     }
@@ -102,8 +79,7 @@ export const useProfile = () => {
     profile,
     loading,
     isSaving,
-    updateProfile,
-    createProfile,
+    saveProfile, // Export saveProfile as the single function
     refetch: fetchProfile,
   }
 }

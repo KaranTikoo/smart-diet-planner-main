@@ -18,7 +18,7 @@ import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum } from "@/lib/supa
 const OnboardingForm = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { profile, createProfile, updateProfile, loading: profileLoading, isSaving } = useProfile();
+  const { profile, saveProfile, loading: profileLoading, isSaving } = useProfile(); // Use saveProfile
   const [currentStep, setCurrentStep] = useState(1);
   const [onboardingData, setOnboardingData] = useState<Partial<Profile>>({
     full_name: "",
@@ -43,6 +43,7 @@ const OnboardingForm = () => {
         goal_type: profile.goal_type,
         goal_weight: profile.goal_weight,
         activity_level: profile.activity_level,
+        daily_calorie_goal: profile.daily_calorie_goal, // Ensure daily_calorie_goal is loaded
       });
     }
   }, [profile, profileLoading]);
@@ -79,9 +80,12 @@ const OnboardingForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // The user object is guaranteed to be present here because RequireAuth protects this route.
-    // If for some reason user is null, it indicates a deeper issue with auth state management
-    // or a bypass of RequireAuth, which should be addressed at that level.
+    
+    // Ensure user is available (guaranteed by RequireAuth, but good for type safety)
+    if (!user) {
+      toast.error("Authentication error: User not found.");
+      return;
+    }
 
     if (currentStep === 1 && (!onboardingData.full_name || !onboardingData.age || !onboardingData.gender || !onboardingData.height || !onboardingData.current_weight)) {
       toast.error("Please fill all basic information fields.");
@@ -93,8 +97,7 @@ const OnboardingForm = () => {
     }
 
     try {
-      const profileDataToSave: Omit<Profile, 'id' | 'created_at' | 'updated_at'> = {
-        email: user!.email || "", // user is guaranteed to be non-null here
+      const profileDataToSave: Partial<Profile> = { // Use Partial<Profile> as we're not sending all fields
         full_name: onboardingData.full_name || null,
         age: onboardingData.age || null,
         gender: onboardingData.gender as GenderEnum || null,
@@ -106,11 +109,8 @@ const OnboardingForm = () => {
         daily_calorie_goal: onboardingData.daily_calorie_goal || 2000, // Provide a default if null
       };
 
-      if (profile) {
-        await updateProfile(profileDataToSave);
-      } else {
-        await createProfile(profileDataToSave);
-      }
+      // Always call saveProfile, which uses upsert
+      await saveProfile(profileDataToSave);
       
       toast.success("Profile created/updated successfully!");
       navigate("/dashboard");
