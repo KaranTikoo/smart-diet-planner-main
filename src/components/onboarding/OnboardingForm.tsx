@@ -103,7 +103,7 @@ const OnboardingForm = () => {
         goal_type: onboardingData.goal_type as GoalTypeEnum || null,
         goal_weight: onboardingData.goal_weight || null,
         activity_level: onboardingData.activity_level as ActivityLevelEnum || null,
-        daily_calorie_goal: onboardingData.daily_calorie_goal || null,
+        daily_calorie_goal: onboardingData.daily_calorie_goal || 2000, // Provide a default if null
       };
 
       if (profile) {

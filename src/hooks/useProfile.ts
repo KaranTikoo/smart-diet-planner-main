@@ -55,9 +55,9 @@ export const useProfile = () => {
       setProfile(data)
       toast.success('Profile updated successfully!')
       return data
-    } catch (error) {
-      console.error('Error updating profile:', error)
-      toast.error('Failed to update profile')
+    } catch (error: any) {
+      console.error('Error updating profile:', error) // Log the full error object
+      toast.error(`Failed to update profile: ${error.message || 'Unknown error'}`) // Provide more specific toast message
     } finally {
       setIsSaving(false);
     }
@@ -85,9 +85,9 @@ export const useProfile = () => {
       setProfile(data)
       toast.success('Profile created successfully!')
       return data
-    } catch (error) {
-      console.error('Error creating profile:', error)
-      toast.error('Failed to create profile')
+    } catch (error: any) {
+      console.error('Error creating profile:', error) // Log the full error object
+      toast.error(`Failed to create profile: ${error.message || 'Unknown error'}`) // Provide more specific toast message
     } finally {
       setIsSaving(false);
     }
@@ -99,8 +99,8 @@ export const useProfile = () => {
 
   return {
     profile,
-    loading, // For initial fetch
-    isSaving, // For create/update operations
+    loading,
+    isSaving,
     updateProfile,
     createProfile,
     refetch: fetchProfile,
