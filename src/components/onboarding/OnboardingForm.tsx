@@ -70,11 +70,12 @@ const OnboardingForm = () => {
 
   const handleAllergiesChange = (allergy: string) => {
     setLocalDietaryPreferences((prev) => {
-      const allergies = [...prev.allergies];
-      if (allergies.includes(allergy)) {
-        return { ...prev, allergies: allergies.filter((a) => a !== allergy) };
+      // Ensure prev.allergies is an array, default to empty if undefined/null
+      const currentAllergies = Array.isArray(prev.allergies) ? [...prev.allergies] : [];
+      if (currentAllergies.includes(allergy)) {
+        return { ...prev, allergies: currentAllergies.filter((a) => a !== allergy) };
       } else {
-        return { ...allergies, allergy };
+        return { ...prev, allergies: [...currentAllergies, allergy] };
       }
     });
   };
@@ -84,7 +85,6 @@ const OnboardingForm = () => {
     
     if (!user) {
       console.error("Authentication error: User not found during onboarding submission. Attempting to proceed anyway.");
-      // As per user request, attempt to navigate even if user is null, though saveProfile will likely fail.
       navigate("/dashboard");
       return;
     }
@@ -113,7 +113,6 @@ const OnboardingForm = () => {
   };
 
   const nextStep = () => {
-    // Removed validation checks as per user request
     setCurrentStep((prev) => Math.min(prev + 1, 3));
   };
 

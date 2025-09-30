@@ -71,11 +71,12 @@ const Settings = () => {
 
   const handleAllergiesChange = (allergy: string) => {
     setLocalDietaryPreferences((prev) => {
-      const allergies = [...prev.allergies];
-      if (allergies.includes(allergy)) {
-        return { ...prev, allergies: allergies.filter((a) => a !== allergy) };
+      // Ensure prev.allergies is an array, default to empty if undefined/null
+      const currentAllergies = Array.isArray(prev.allergies) ? [...prev.allergies] : [];
+      if (currentAllergies.includes(allergy)) {
+        return { ...prev, allergies: currentAllergies.filter((a) => a !== allergy) };
       } else {
-        return { ...prev, allergies: [...allergies, allergy] };
+        return { ...prev, allergies: [...currentAllergies, allergy] };
       }
     });
   };
