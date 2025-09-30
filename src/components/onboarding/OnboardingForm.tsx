@@ -74,7 +74,7 @@ const OnboardingForm = () => {
       if (allergies.includes(allergy)) {
         return { ...prev, allergies: allergies.filter((a) => a !== allergy) };
       } else {
-        return { ...allergies, allergy };
+        return { ...prev, allergies: [...allergies, allergy] };
       }
     });
   };
@@ -82,15 +82,22 @@ const OnboardingForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user) {
-      console.error("Authentication error: User not found during onboarding submission. Attempting to proceed anyway.");
-      // As per user request, attempt to navigate even if user is null, though saveProfile will likely fail.
-      navigate("/dashboard");
+    if (!user) { // This check is crucial
+      toast.error("Authentication error: User not found.");
+      return;
+    }
+
+    if (currentStep === 1 && (!onboardingData.full_name || !onboardingData.age || !onboardingData.gender || !onboardingData.height || !onboardingData.current_weight)) {
+      toast.error("Please fill all basic information fields.");
+      return;
+    }
+    if (currentStep === 2 && (!onboardingData.goal_type || !onboardingData.activity_level || (onboardingData.goal_type === "lose_weight" && !onboardingData.goal_weight))) {
+      toast.error("Please fill all goals and activity fields.");
       return;
     }
 
     try {
-      const profileDataToSave: Partial<Profile> = {
+      const profileDataToSave: Partial<Profile> = { // Use Partial<Profile> as we're not sending all fields
         full_name: onboardingData.full_name || null,
         age: onboardingData.age || null,
         gender: onboardingData.gender as GenderEnum || null,
@@ -99,10 +106,11 @@ const OnboardingForm = () => {
         goal_type: onboardingData.goal_type as GoalTypeEnum || null,
         goal_weight: onboardingData.goal_weight || null,
         activity_level: onboardingData.activity_level as ActivityLevelEnum || null,
-        daily_calorie_goal: onboardingData.daily_calorie_goal || 2000,
+        daily_calorie_goal: onboardingData.daily_calorie_goal || 2000, // Provide a default if null
       };
 
-      await saveProfile(user, profileDataToSave);
+      // Always call saveProfile, which uses upsert
+      await saveProfile(user, profileDataToSave); // Pass user here
       
       toast.success("Profile created/updated successfully!");
       navigate("/dashboard");
@@ -113,7 +121,18 @@ const OnboardingForm = () => {
   };
 
   const nextStep = () => {
-    // Removed validation checks as per user request
+    if (currentStep === 1) {
+      if (!onboardingData.full_name || !onboardingData.age || !onboardingData.gender || !onboardingData.height || !onboardingData.current_weight) {
+        toast.error("Please fill all basic information fields before proceeding.");
+        return;
+      }
+    }
+    if (currentStep === 2) {
+      if (!onboardingData.goal_type || !onboardingData.activity_level || (onboardingData.goal_type === "lose_weight" && !onboardingData.goal_weight)) {
+        toast.error("Please fill all goals and activity fields before proceeding.");
+        return;
+      }
+    }
     setCurrentStep((prev) => Math.min(prev + 1, 3));
   };
 
@@ -406,13 +425,13 @@ const OnboardingForm = () => {
             type="button"
             variant="outline"
             onClick={prevStep}
-            disabled={currentStep === 1}
+            disabled={currentStep === 1 || isSaving}
           >
             Previous
           </Button>
           
           {currentStep < 3 ? (
-            <Button type="button" onClick={nextStep}>
+            <Button type="button" onClick={nextStep} disabled={isSaving}>
               Next
             </Button>
           ) : (
