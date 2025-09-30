@@ -34,7 +34,6 @@ const OnboardingForm = () => {
   });
 
   useEffect(() => {
-    console.log("OnboardingForm mounted or user/authLoading changed:", { user, authLoading, profile, profileLoading });
     if (profile && !profileLoading) {
       setOnboardingData({
         full_name: profile.full_name || "",
@@ -48,7 +47,7 @@ const OnboardingForm = () => {
         daily_calorie_goal: profile.daily_calorie_goal, // Ensure daily_calorie_goal is loaded
       });
     }
-  }, [user, authLoading, profile, profileLoading]); // Added user and authLoading to dependencies
+  }, [profile, profileLoading]);
 
   const handleChange = (field: keyof Profile, value: any) => {
     setOnboardingData((prev) => ({ ...prev, [field]: value }));
@@ -83,9 +82,8 @@ const OnboardingForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log("handleSubmit called. Current user:", user); // Log user here
     if (!user) { // This check is crucial
-      toast.error("Authentication error: User not found. Please try logging in again.");
+      toast.error("Authentication error: User not found.");
       return;
     }
 
@@ -151,305 +149,298 @@ const OnboardingForm = () => {
         </CardDescription>
       </CardHeader>
       
-      {authLoading && !user ? (
-        <div className="text-center py-8">
-          <p className="text-lg text-muted-foreground">Loading user data...</p>
-          <p className="text-sm text-muted-foreground">Please wait while we prepare your profile.</p>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit}>
-          <CardContent>
-            <Tabs value={`step-${currentStep}`} className="w-full">
-              <TabsList className="grid grid-cols-3">
-                <TabsTrigger value="step-1" onClick={() => setCurrentStep(1)}>
-                  Basic Information
-                </TabsTrigger>
-                <TabsTrigger value="step-2" onClick={() => setCurrentStep(2)}>
-                  Goals & Activity
-                </TabsTrigger>
-                <TabsTrigger value="step-3" onClick={() => setCurrentStep(3)}>
-                  Dietary Preferences
-                </TabsTrigger>
-              </TabsList>
-              
-              {/* Step 1: Basic Information */}
-              <TabsContent value="step-1" className="space-y-4 mt-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <form onSubmit={handleSubmit}>
+        <CardContent>
+          <Tabs value={`step-${currentStep}`} className="w-full">
+            <TabsList className="grid grid-cols-3">
+              <TabsTrigger value="step-1" onClick={() => setCurrentStep(1)}>
+                Basic Information
+              </TabsTrigger>
+              <TabsTrigger value="step-2" onClick={() => setCurrentStep(2)}>
+                Goals & Activity
+              </TabsTrigger>
+              <TabsTrigger value="step-3" onClick={() => setCurrentStep(3)}>
+                Dietary Preferences
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* Step 1: Basic Information */}
+            <TabsContent value="step-1" className="space-y-4 mt-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    value={onboardingData.full_name || ""}
+                    onChange={(e) => handleChange("full_name", e.target.value)}
+                    placeholder="Enter your name"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="age">Age</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    value={onboardingData.age || ""}
+                    onChange={(e) => handleChange("age", parseInt(e.target.value) || null)}
+                    placeholder="Enter your age"
+                    min="18"
+                    max="100"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Gender</Label>
+                  <RadioGroup
+                    value={onboardingData.gender || ""}
+                    onValueChange={(value: GenderEnum) => handleChange("gender", value)}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="male" id="gender-male" />
+                      <Label htmlFor="gender-male">Male</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="female" id="gender-female" />
+                      <Label htmlFor="gender-female">Female</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="other" id="gender-other" />
+                      <Label htmlFor="gender-other">Other</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="height">Height (cm)</Label>
+                  <Input
+                    id="height"
+                    type="number"
+                    value={onboardingData.height || ""}
+                    onChange={(e) => handleChange("height", parseInt(e.target.value) || null)}
+                    placeholder="Enter your height in cm"
+                    min="100"
+                    max="250"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Current Weight (kg)</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    value={onboardingData.current_weight || ""}
+                    onChange={(e) => handleChange("current_weight", parseFloat(e.target.value) || null)}
+                    placeholder="Enter your weight in kg"
+                    min="30"
+                    max="300"
+                  />
+                </div>
+              </div>
+            </TabsContent>
+            
+            {/* Step 2: Goals & Activity */}
+            <TabsContent value="step-2" className="space-y-4 mt-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>What's your main goal?</Label>
+                  <RadioGroup
+                    value={onboardingData.goal_type || "lose_weight"}
+                    onValueChange={(value: GoalTypeEnum) => handleChange("goal_type", value)}
+                    className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
+                  >
+                    <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
+                      <RadioGroupItem value="lose_weight" id="goal-weight-loss" />
+                      <Label htmlFor="goal-weight-loss">Weight Loss</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
+                      <RadioGroupItem value="maintain_weight" id="goal-maintenance" />
+                      <Label htmlFor="goal-maintenance">Maintenance</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
+                      <RadioGroupItem value="gain_weight" id="goal-muscle-gain" />
+                      <Label htmlFor="goal-muscle-gain">Muscle Gain</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                
+                {onboardingData.goal_type === "lose_weight" && (
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="targetWeight">Target Weight (kg)</Label>
                     <Input
-                      id="name"
-                      value={onboardingData.full_name || ""}
-                      onChange={(e) => handleChange("full_name", e.target.value)}
-                      placeholder="Enter your name"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="age">Age</Label>
-                    <Input
-                      id="age"
+                      id="targetWeight"
                       type="number"
-                      value={onboardingData.age || ""}
-                      onChange={(e) => handleChange("age", parseInt(e.target.value) || null)}
-                      placeholder="Enter your age"
-                      min="18"
-                      max="100"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Gender</Label>
-                    <RadioGroup
-                      value={onboardingData.gender || ""}
-                      onValueChange={(value: GenderEnum) => handleChange("gender", value)}
-                      className="flex gap-4"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="male" id="gender-male" />
-                        <Label htmlFor="gender-male">Male</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="female" id="gender-female" />
-                        <Label htmlFor="gender-female">Female</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="other" id="gender-other" />
-                        <Label htmlFor="gender-other">Other</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="height">Height (cm)</Label>
-                    <Input
-                      id="height"
-                      type="number"
-                      value={onboardingData.height || ""}
-                      onChange={(e) => handleChange("height", parseInt(e.target.value) || null)}
-                      placeholder="Enter your height in cm"
-                      min="100"
-                      max="250"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="weight">Current Weight (kg)</Label>
-                    <Input
-                      id="weight"
-                      type="number"
-                      value={onboardingData.current_weight || ""}
-                      onChange={(e) => handleChange("current_weight", parseFloat(e.target.value) || null)}
-                      placeholder="Enter your weight in kg"
+                      value={onboardingData.goal_weight || ""}
+                      onChange={(e) => handleChange("goal_weight", parseFloat(e.target.value) || null)}
+                      placeholder="Enter your target weight"
                       min="30"
                       max="300"
                     />
                   </div>
+                )}
+                
+                <div className="space-y-2">
+                  <Label>How would you describe your activity level?</Label>
+                  <Select
+                    value={onboardingData.activity_level || "moderately_active"}
+                    onValueChange={(value: ActivityLevelEnum) => handleChange("activity_level", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select activity level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sedentary">Sedentary (little to no exercise)</SelectItem>
+                      <SelectItem value="lightly_active">Light (light exercise 1-3 days/week)</SelectItem>
+                      <SelectItem value="moderately_active">Moderate (moderate exercise 3-5 days/week)</SelectItem>
+                      <SelectItem value="very_active">Active (hard exercise 6-7 days/week)</SelectItem>
+                      <SelectItem value="extremely_active">Very Active (hard daily exercise & physical job)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </TabsContent>
-              
-              {/* Step 2: Goals & Activity */}
-              <TabsContent value="step-2" className="space-y-4 mt-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>What's your main goal?</Label>
-                    <RadioGroup
-                      value={onboardingData.goal_type || "lose_weight"}
-                      onValueChange={(value: GoalTypeEnum) => handleChange("goal_type", value)}
-                      className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
-                    >
-                      <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                        <RadioGroupItem value="lose_weight" id="goal-weight-loss" />
-                        <Label htmlFor="goal-weight-loss">Weight Loss</Label>
-                      </div>
-                      <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                        <RadioGroupItem value="maintain_weight" id="goal-maintenance" />
-                        <Label htmlFor="goal-maintenance">Maintenance</Label>
-                      </div>
-                      <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                        <RadioGroupItem value="gain_weight" id="goal-muscle-gain" />
-                        <Label htmlFor="goal-muscle-gain">Muscle Gain</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                  
-                  {onboardingData.goal_type === "lose_weight" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="targetWeight">Target Weight (kg)</Label>
-                      <Input
-                        id="targetWeight"
-                        type="number"
-                        value={onboardingData.goal_weight || ""}
-                        onChange={(e) => handleChange("goal_weight", parseFloat(e.target.value) || null)}
-                        placeholder="Enter your target weight"
-                        min="30"
-                        max="300"
-                      />
-                    </div>
-                  )}
-                  
-                  <div className="space-y-2">
-                    <Label>How would you describe your activity level?</Label>
-                    <Select
-                      value={onboardingData.activity_level || "moderately_active"}
-                      onValueChange={(value: ActivityLevelEnum) => handleChange("activity_level", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select activity level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sedentary">Sedentary (little to no exercise)</SelectItem>
-                        <SelectItem value="lightly_active">Light (light exercise 1-3 days/week)</SelectItem>
-                        <SelectItem value="moderately_active">Moderate (moderate exercise 3-5 days/week)</SelectItem>
-                        <SelectItem value="very_active">Active (hard exercise 6-7 days/week)</SelectItem>
-                        <SelectItem value="extremely_active">Very Active (hard daily exercise & physical job)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>How many meals do you prefer per day?</Label>
-                    <div className="pt-2">
-                      <Slider
-                        value={[localDietaryPreferences.mealsPerDay]}
-                        min={2}
-                        max={6}
-                        step={1}
-                        onValueChange={(value) => handleLocalDietaryChange("mealsPerDay", value[0])}
-                      />
-                      <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-                        <span>2</span>
-                        <span>3</span>
-                        <span>4</span>
-                        <span>5</span>
-                        <span>6</span>
-                      </div>
-                    </div>
-                    <p className="text-center mt-2">{localDietaryPreferences.mealsPerDay} meals per day</p>
-                  </div>
-                </div>
-              </TabsContent>
-              
-              {/* Step 3: Dietary Preferences */}
-              <TabsContent value="step-3" className="space-y-4 mt-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Dietary Preferences</Label>
-                    <Select
-                      value={localDietaryPreferences.diet}
-                      onValueChange={(value) => handleLocalDietaryChange("diet", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select diet type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="no_restrictions">No Restrictions</SelectItem>
-                        <SelectItem value="vegetarian">Vegetarian</SelectItem>
-                        <SelectItem value="vegan">Vegan</SelectItem>
-                        <SelectItem value="keto">Keto</SelectItem>
-                        <SelectItem value="paleo">Paleo</SelectItem>
-                        <SelectItem value="low_carb">Low Carb</SelectItem>
-                        <SelectItem value="mediterranean">Mediterranean</SelectItem>
-                        <SelectItem value="gluten_free">Gluten Free</SelectItem>
-                        <SelectItem value="dairy_free">Dairy Free</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Allergies (select all that apply)</Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
-                      {["nuts", "dairy", "eggs", "soy", "gluten", "shellfish", "fish", "wheat"].map((allergy) => (
-                        <div key={allergy} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`allergy-${allergy}`}
-                            checked={localDietaryPreferences.allergies.includes(allergy)}
-                            onCheckedChange={() => handleAllergiesChange(allergy)}
-                          />
-                          <Label htmlFor={`allergy-${allergy}`} className="capitalize">
-                            {allergy}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="avoidFoods">Foods you want to avoid</Label>
-                    <Textarea
-                      id="avoidFoods"
-                      value={localDietaryPreferences.avoidFoods}
-                      onChange={(e) => handleLocalDietaryChange("avoidFoods", e.target.value)}
-                      placeholder="List any specific foods you want to avoid"
-                      rows={3}
+                
+                <div className="space-y-2">
+                  <Label>How many meals do you prefer per day?</Label>
+                  <div className="pt-2">
+                    <Slider
+                      value={[localDietaryPreferences.mealsPerDay]}
+                      min={2}
+                      max={6}
+                      step={1}
+                      onValueChange={(value) => handleLocalDietaryChange("mealsPerDay", value[0])}
                     />
+                    <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+                      <span>2</span>
+                      <span>3</span>
+                      <span>4</span>
+                      <span>5</span>
+                      <span>6</span>
+                    </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Budget Preference</Label>
-                    <RadioGroup
-                      value={localDietaryPreferences.budget}
-                      onValueChange={(value) => handleLocalDietaryChange("budget", value)}
-                      className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
-                    >
-                      <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                        <RadioGroupItem value="low" id="budget-low" />
-                        <Label htmlFor="budget-low">Budget-friendly</Label>
+                  <p className="text-center mt-2">{localDietaryPreferences.mealsPerDay} meals per day</p>
+                </div>
+              </div>
+            </TabsContent>
+            
+            {/* Step 3: Dietary Preferences */}
+            <TabsContent value="step-3" className="space-y-4 mt-4">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Dietary Preferences</Label>
+                  <Select
+                    value={localDietaryPreferences.diet}
+                    onValueChange={(value) => handleLocalDietaryChange("diet", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select diet type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="no_restrictions">No Restrictions</SelectItem>
+                      <SelectItem value="vegetarian">Vegetarian</SelectItem>
+                      <SelectItem value="vegan">Vegan</SelectItem>
+                      <SelectItem value="keto">Keto</SelectItem>
+                      <SelectItem value="paleo">Paleo</SelectItem>
+                      <SelectItem value="low_carb">Low Carb</SelectItem>
+                      <SelectItem value="mediterranean">Mediterranean</SelectItem>
+                      <SelectItem value="gluten_free">Gluten Free</SelectItem>
+                      <SelectItem value="dairy_free">Dairy Free</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Allergies (select all that apply)</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
+                    {["nuts", "dairy", "eggs", "soy", "gluten", "shellfish", "fish", "wheat"].map((allergy) => (
+                      <div key={allergy} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`allergy-${allergy}`}
+                          checked={localDietaryPreferences.allergies.includes(allergy)}
+                          onCheckedChange={() => handleAllergiesChange(allergy)}
+                        />
+                        <Label htmlFor={`allergy-${allergy}`} className="capitalize">
+                          {allergy}
+                        </Label>
                       </div>
-                      <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                        <RadioGroupItem value="medium" id="budget-medium" />
-                        <Label htmlFor="budget-medium">Moderate</Label>
-                      </div>
-                      <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                        <RadioGroupItem value="high" id="budget-high" />
-                        <Label htmlFor="budget-high">Premium</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Cooking Time Preference</Label>
-                    <Select
-                      value={localDietaryPreferences.preparationTime}
-                      onValueChange={(value) => handleLocalDietaryChange("preparationTime", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select cooking time preference" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="quick">Quick (under 15 minutes)</SelectItem>
-                        <SelectItem value="moderate">Moderate (15-30 minutes)</SelectItem>
-                        <SelectItem value="extended">Extended (30+ minutes)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    ))}
                   </div>
                 </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="avoidFoods">Foods you want to avoid</Label>
+                  <Textarea
+                    id="avoidFoods"
+                    value={localDietaryPreferences.avoidFoods}
+                    onChange={(e) => handleLocalDietaryChange("avoidFoods", e.target.value)}
+                    placeholder="List any specific foods you want to avoid"
+                    rows={3}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Budget Preference</Label>
+                  <RadioGroup
+                    value={localDietaryPreferences.budget}
+                    onValueChange={(value) => handleLocalDietaryChange("budget", value)}
+                    className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
+                  >
+                    <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
+                      <RadioGroupItem value="low" id="budget-low" />
+                      <Label htmlFor="budget-low">Budget-friendly</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
+                      <RadioGroupItem value="medium" id="budget-medium" />
+                      <Label htmlFor="budget-medium">Moderate</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
+                      <RadioGroupItem value="high" id="budget-high" />
+                      <Label htmlFor="budget-high">Premium</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Cooking Time Preference</Label>
+                  <Select
+                    value={localDietaryPreferences.preparationTime}
+                    onValueChange={(value) => handleLocalDietaryChange("preparationTime", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select cooking time preference" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="quick">Quick (under 15 minutes)</SelectItem>
+                      <SelectItem value="moderate">Moderate (15-30 minutes)</SelectItem>
+                      <SelectItem value="extended">Extended (30+ minutes)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        
+        <CardFooter className="flex justify-between border-t p-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={prevStep}
+            disabled={currentStep === 1 || isSaving}
+          >
+            Previous
+          </Button>
           
-          <CardFooter className="flex justify-between border-t p-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={prevStep}
-              disabled={currentStep === 1 || isSaving || authLoading || !user}
-            >
-              Previous
+          {currentStep < 3 ? (
+            <Button type="button" onClick={nextStep} disabled={isSaving}>
+              Next
             </Button>
-            
-            {currentStep < 3 ? (
-              <Button type="button" onClick={nextStep} disabled={isSaving || authLoading || !user}>
-                Next
-              </Button>
-            ) : (
-              <Button type="submit" disabled={isSaving || authLoading || !user}>
-                {isSaving ? "Saving..." : "Complete Setup"}
-              </Button>
-            )}
-          </CardFooter>
-        </form>
-      )}
+          ) : (
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? "Saving..." : "Complete Setup"}
+            </Button>
+          )}
+        </CardFooter>
+      </form>
     </Card>
   );
 };
