@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowDown, ArrowUp } from "lucide-react";
 
@@ -25,7 +24,7 @@ const SummaryCards = ({
           <div className="flex justify-between items-end">
             <div className="text-2xl font-bold">{currentWeight} kg</div>
             <div className={`flex items-center ${isWeightLoss ? "text-success" : "text-destructive"}`}>
-              {isWeightLoss ? <ArrowDown className="h-4 w-4 mr-1" /> : <ArrowUp className="h-4 w-4 mr-1" />}
+              {weightChange !== 0 && (isWeightLoss ? <ArrowDown className="h-4 w-4 mr-1" /> : <ArrowUp className="h-4 w-4 mr-1" />)}
               <span className="text-sm font-medium">{Math.abs(weightChange)} kg</span>
             </div>
           </div>
@@ -50,8 +49,8 @@ const SummaryCards = ({
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-end">
-            <div className="text-2xl font-bold">18 days</div>
-            <div className="text-sm text-muted-foreground">Best: 24 days</div>
+            <div className="text-2xl font-bold">0 days</div> {/* Initialized to 0 */}
+            <div className="text-sm text-muted-foreground">Best: 0 days</div> {/* Initialized to 0 */}
           </div>
         </CardContent>
       </Card>
@@ -62,7 +61,7 @@ const SummaryCards = ({
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-end">
-            <div className="text-2xl font-bold">65%</div>
+            <div className="text-2xl font-bold">0%</div> {/* Initialized to 0 */}
             <div className="text-sm text-muted-foreground">Weight loss</div>
           </div>
         </CardContent>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -26,18 +25,21 @@ const Progress = () => {
   // Generate monthly data
   const monthlyData = generateMonthlyData();
   
-  // Calculate metrics
-  const weightChange = parseFloat((monthlyData[monthlyData.length - 1].weight - monthlyData[0].weight).toFixed(1));
+  // Calculate metrics from the (initially zeroed) data
+  const currentData = period === "week" ? weeklyData : monthlyData;
+  
+  const weightChange = currentData.length > 1 
+    ? parseFloat((currentData[currentData.length - 1].weight - currentData[0].weight).toFixed(1))
+    : 0;
   const isWeightLoss = weightChange < 0;
   
-  const averageCalories = Math.round(
-    weeklyData.reduce((sum, day) => sum + day.calories, 0) / weeklyData.length
-  );
+  const totalCalories = currentData.reduce((sum, day) => sum + day.calories, 0);
+  const averageCalories = currentData.length > 0 ? Math.round(totalCalories / currentData.length) : 0;
   
   const averageMacros = {
-    carbs: Math.round(weeklyData.reduce((sum, day) => sum + day.carbs, 0) / weeklyData.length),
-    protein: Math.round(weeklyData.reduce((sum, day) => sum + day.protein, 0) / weeklyData.length),
-    fat: Math.round(weeklyData.reduce((sum, day) => sum + day.fat, 0) / weeklyData.length),
+    carbs: currentData.length > 0 ? Math.round(currentData.reduce((sum, day) => sum + day.carbs, 0) / currentData.length) : 0,
+    protein: currentData.length > 0 ? Math.round(currentData.reduce((sum, day) => sum + day.protein, 0) / currentData.length) : 0,
+    fat: currentData.length > 0 ? Math.round(currentData.reduce((sum, day) => sum + day.fat, 0) / currentData.length) : 0,
   };
 
   const handleAddEntry = () => {
@@ -69,7 +71,7 @@ const Progress = () => {
 
         {/* Summary Cards */}
         <SummaryCards 
-          currentWeight={monthlyData[monthlyData.length - 1].weight} 
+          currentWeight={currentData.length > 0 ? currentData[currentData.length - 1].weight : 0} 
           weightChange={weightChange}
           isWeightLoss={isWeightLoss}
           averageCalories={averageCalories}
@@ -77,14 +79,14 @@ const Progress = () => {
 
         {/* Main Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <WeightTrendChart data={period === "week" ? weeklyData : monthlyData} />
-          <CalorieIntakeChart data={period === "week" ? weeklyData : monthlyData} />
+          <WeightTrendChart data={currentData} />
+          <CalorieIntakeChart data={currentData} />
         </div>
 
         {/* Macros and Details */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <MacronutrientBreakdown macros={averageMacros} caloriesAvg={averageCalories} />
-          <RecentActivity entries={weeklyData} />
+          <RecentActivity entries={currentData} />
         </div>
 
         {/* Add Entry Dialog */}
