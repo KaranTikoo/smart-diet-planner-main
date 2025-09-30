@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase, WeightEntry } from '@/lib/supabase'
-import { useAuth } from './useAuth'
+import { useAuth } from '@/providers/AuthProvider' // Corrected import path
 import { toast } from 'sonner'
 
 export const useWeightEntries = (limit?: number) => {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase, Profile } from '@/lib/supabase'
-import { useAuth } from './useAuth'
+import { useAuth } from '@/providers/AuthProvider' // Corrected import path
 import { toast } from 'sonner'
 
 export const useProfile = () => {
