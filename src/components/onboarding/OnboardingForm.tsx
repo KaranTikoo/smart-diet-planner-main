@@ -17,8 +17,8 @@ import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum } from "@/lib/supa
 
 const OnboardingForm = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth(); // Get authLoading state
-  const { profile, createProfile, updateProfile, loading: profileLoading } = useProfile();
+  const { user, loading: authLoading } = useAuth();
+  const { profile, createProfile, updateProfile, loading: profileLoading, isSaving } = useProfile(); // Destructure isSaving
   const [currentStep, setCurrentStep] = useState(1);
   const [onboardingData, setOnboardingData] = useState<Partial<Profile>>({
     full_name: "",
@@ -29,12 +29,11 @@ const OnboardingForm = () => {
     goal_type: "lose_weight",
     goal_weight: null,
     activity_level: "moderately_active",
-    daily_calorie_goal: null, // This will be calculated or set later
+    daily_calorie_goal: null,
   });
 
   useEffect(() => {
     if (profile && !profileLoading) {
-      // If a profile already exists, pre-fill the form
       setOnboardingData({
         full_name: profile.full_name || "",
         age: profile.age,
@@ -52,11 +51,8 @@ const OnboardingForm = () => {
     setOnboardingData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Note: Allergies and avoidFoods are not directly in the Supabase `profiles` table.
-  // For now, we'll keep them in the local state, but they would need a separate table
-  // or a JSONB column in `profiles` for full persistence.
   const [localDietaryPreferences, setLocalDietaryPreferences] = useState({
-    diet: "no_restrictions", // This would need to be stored in Supabase if desired
+    diet: "no_restrictions",
     allergies: [] as string[],
     avoidFoods: "",
     mealsPerDay: 3,
@@ -88,12 +84,10 @@ const OnboardingForm = () => {
       return;
     }
 
-    // Basic validation for required fields in step 1
     if (currentStep === 1 && (!onboardingData.full_name || !onboardingData.age || !onboardingData.gender || !onboardingData.height || !onboardingData.current_weight)) {
       toast.error("Please fill all basic information fields.");
       return;
     }
-    // Basic validation for required fields in step 2
     if (currentStep === 2 && (!onboardingData.goal_type || !onboardingData.activity_level || (onboardingData.goal_type === "lose_weight" && !onboardingData.goal_weight))) {
       toast.error("Please fill all goals and activity fields.");
       return;
@@ -128,7 +122,6 @@ const OnboardingForm = () => {
   };
 
   const nextStep = () => {
-    // Basic validation before moving to the next step
     if (currentStep === 1) {
       if (!onboardingData.full_name || !onboardingData.age || !onboardingData.gender || !onboardingData.height || !onboardingData.current_weight) {
         toast.error("Please fill all basic information fields before proceeding.");
@@ -433,18 +426,18 @@ const OnboardingForm = () => {
             type="button"
             variant="outline"
             onClick={prevStep}
-            disabled={currentStep === 1}
+            disabled={currentStep === 1 || isSaving}
           >
             Previous
           </Button>
           
           {currentStep < 3 ? (
-            <Button type="button" onClick={nextStep}>
+            <Button type="button" onClick={nextStep} disabled={isSaving}>
               Next
             </Button>
           ) : (
-            <Button type="submit" disabled={profileLoading || authLoading || !user}>
-              {profileLoading || authLoading ? "Saving..." : "Complete Setup"}
+            <Button type="submit" disabled={profileLoading || authLoading || !user || isSaving}>
+              {isSaving ? "Saving..." : "Complete Setup"}
             </Button>
           )}
         </CardFooter>

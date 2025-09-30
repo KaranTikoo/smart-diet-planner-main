@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { supabase, Profile } from '@/lib/supabase'
-import { useAuth } from '@/providers/AuthProvider' // Corrected import path
+import { useAuth } from '@/providers/AuthProvider'
 import { toast } from 'sonner'
 
 export const useProfile = () => {
   const { user } = useAuth()
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false) // For initial fetch
+  const [isSaving, setIsSaving] = useState(false); // For create/update operations
 
   const fetchProfile = async () => {
     if (!user) return
@@ -19,7 +20,7 @@ export const useProfile = () => {
         .eq('id', user.id)
         .single()
 
-      if (error && error.code !== 'PGRST116') {
+      if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
         throw error
       }
 
@@ -35,6 +36,7 @@ export const useProfile = () => {
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) return
 
+    setIsSaving(true);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -56,12 +58,15 @@ export const useProfile = () => {
     } catch (error) {
       console.error('Error updating profile:', error)
       toast.error('Failed to update profile')
+    } finally {
+      setIsSaving(false);
     }
   }
 
   const createProfile = async (profileData: Omit<Profile, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) return
 
+    setIsSaving(true);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -83,6 +88,8 @@ export const useProfile = () => {
     } catch (error) {
       console.error('Error creating profile:', error)
       toast.error('Failed to create profile')
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -92,7 +99,8 @@ export const useProfile = () => {
 
   return {
     profile,
-    loading,
+    loading, // For initial fetch
+    isSaving, // For create/update operations
     updateProfile,
     createProfile,
     refetch: fetchProfile,
