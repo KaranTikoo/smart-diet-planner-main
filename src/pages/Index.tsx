@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
+  const featuresRef = useRef<HTMLDivElement>(null); // Create a ref for the features section
   
   useEffect(() => {
     // Check if user is already logged in
@@ -13,6 +14,10 @@ const Index = () => {
       navigate("/dashboard");
     }
   }, [navigate]);
+
+  const handleLearnMoreClick = () => {
+    featuresRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
@@ -41,7 +46,7 @@ const Index = () => {
               <Button size="lg" onClick={() => navigate("/login")} className="gap-2">
                 Start Your Journey <ArrowRight className="h-4 w-4" />
               </Button>
-              <Button size="lg" variant="outline">Learn More</Button>
+              <Button size="lg" variant="outline" onClick={handleLearnMoreClick}>Learn More</Button>
             </div>
           </div>
           <div className="lg:w-1/2">
@@ -54,7 +59,7 @@ const Index = () => {
         </section>
 
         {/* Features Section */}
-        <section className="bg-card py-20">
+        <section ref={featuresRef} className="bg-card py-20"> {/* Attach the ref here */}
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-3xl font-bold mb-4">Powerful Features for Your Nutrition Goals</h2>
