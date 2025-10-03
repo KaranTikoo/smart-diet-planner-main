@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useWeightEntries } from "@/hooks/useWeightEntries";
 import { useFoodEntries } from "@/hooks/useFoodEntries"; // To potentially add calorie entry
 import { MealTypeEnum } from "@/lib/supabase";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
 
 interface AddEntryDialogProps {
   isOpen: boolean;
@@ -52,6 +53,7 @@ const AddEntryDialog = ({
           calories: parseInt(newEntry.calories),
           protein: 0, carbs: 0, fat: 0, // Default to 0 for general entry
           meal_type: newEntry.mealType,
+          serving_size: null, // Add serving_size as it's required by the FoodEntry type
           entry_date: newEntry.date,
         });
       }

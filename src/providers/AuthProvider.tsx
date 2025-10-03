@@ -6,9 +6,11 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
+  isGuest: boolean // Added isGuest
   signIn: (email: string, password: string) => Promise<{ error?: AuthError }>
   signUp: (email: string, password: string) => Promise<{ error?: AuthError }>
   signOut: () => Promise<void>
+  signInAsGuest: () => void // Added signInAsGuest
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined)

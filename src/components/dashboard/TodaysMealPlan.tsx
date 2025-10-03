@@ -9,10 +9,11 @@ interface MealItem {
   prepTime: number;
 }
 
-export interface MealPlan { // Export interface for use in Dashboard
+// Define the MealPlan interface for the component's props
+export interface MealPlan {
   title: string;
   date: Date;
-  mealType: MealTypeEnum; // Use MealTypeEnum
+  mealType: MealTypeEnum;
   items: MealItem[];
   totalCalories: number;
 }

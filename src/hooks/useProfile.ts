@@ -3,6 +3,7 @@ import { supabase, Profile } from '@/lib/supabase'
 import { useAuth } from '@/providers/AuthProvider'
 import { toast } from 'sonner'
 import { User } from '@supabase/supabase-js' // Import User type
+import { TablesInsert } from '@/integrations/supabase/types' // Import TablesInsert
 
 export const useProfile = () => {
   const { user: authUser } = useAuth() // Renamed to avoid conflict with function param
@@ -51,7 +52,7 @@ export const useProfile = () => {
             id: user.id,
             email: user.email, // Use user.email directly, as we've checked it's not null
             ...updates,
-          },
+          } as TablesInsert<'profiles'>, // Explicitly cast to TablesInsert<'profiles'>
         ])
         .select()
         .single()

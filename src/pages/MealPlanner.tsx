@@ -9,7 +9,7 @@ import { PlusCircle, RefreshCw, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useMealPlans } from "@/hooks/useMealPlans"; // Import the new hook
-import { MealPlan as SupabaseMealPlan, MealTypeEnum } from "@/lib/supabase"; // Import Supabase MealPlan type
+import { MealPlan as SupabaseMealPlan, MealTypeEnum, supabase } from "@/lib/supabase"; // Import Supabase MealPlan type and supabase client
 
 // Helper to map Supabase MealPlan to what MealPlanCard expects
 const mapSupabaseMealPlanToCardProps = (supabasePlan: SupabaseMealPlan) => {

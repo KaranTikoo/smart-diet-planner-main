@@ -23,6 +23,7 @@ const AddFoodEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddFoodEntry
     carbs: "",
     fat: "",
     meal_type: "breakfast" as MealTypeEnum,
+    serving_size: "" as string | null, // Added serving_size
     entry_date: new Date().toISOString().split('T')[0], // Current date
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -42,6 +43,7 @@ const AddFoodEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddFoodEntry
         carbs: parseInt(newFoodEntry.carbs) || 0,
         fat: parseInt(newFoodEntry.fat) || 0,
         meal_type: newFoodEntry.meal_type,
+        serving_size: newFoodEntry.serving_size || null, // Pass serving_size
         entry_date: newFoodEntry.entry_date,
       });
       
@@ -53,6 +55,7 @@ const AddFoodEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddFoodEntry
         carbs: "",
         fat: "",
         meal_type: "breakfast",
+        serving_size: null, // Reset serving_size
         entry_date: new Date().toISOString().split('T')[0],
       });
       onOpenChange(false);
@@ -145,6 +148,18 @@ const AddFoodEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddFoodEntry
               type="number"
               placeholder="e.g., 18"
               min="0"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="serving-size" className="text-right">
+              Serving Size
+            </Label>
+            <Input
+              id="serving-size"
+              value={newFoodEntry.serving_size || ""}
+              onChange={(e) => setNewFoodEntry({...newFoodEntry, serving_size: e.target.value})}
+              className="col-span-3"
+              placeholder="e.g., 1 cup, 150g"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">

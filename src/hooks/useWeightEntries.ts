@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase, WeightEntry } from '@/lib/supabase'
 import { useAuth } from '@/providers/AuthProvider' // Corrected import path
 import { toast } from 'sonner'
+import { TablesInsert, TablesUpdate } from '@/integrations/supabase/types' // Import TablesInsert and TablesUpdate
 
 export const useWeightEntries = (limit?: number) => {
   const { user } = useAuth()
@@ -45,7 +46,7 @@ export const useWeightEntries = (limit?: number) => {
           {
             ...entry,
             user_id: user.id,
-          },
+          } as TablesInsert<'weight_entries'>, // Explicitly cast to TablesInsert<'weight_entries'>
         ])
         .select()
         .single()
@@ -67,7 +68,7 @@ export const useWeightEntries = (limit?: number) => {
     try {
       const { data, error } = await supabase
         .from('weight_entries')
-        .update(updates)
+        .update(updates as TablesUpdate<'weight_entries'>) // Explicitly cast to TablesUpdate<'weight_entries'>
         .eq('id', id)
         .eq('user_id', user.id)
         .select()

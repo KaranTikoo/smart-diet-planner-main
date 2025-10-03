@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import DietStats from "@/components/dashboard/DietStats";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import TodaysMealPlan from "@/components/dashboard/TodaysMealPlan";
+import TodaysMealPlan, { MealPlan as TodaysMealPlanProps } from "@/components/dashboard/TodaysMealPlan"; // Import component's MealPlan type
 import WeeklyProgress from "@/components/dashboard/WeeklyProgress";
 import AddFoodEntryDialog from "@/components/dashboard/AddFoodEntryDialog";
 import AddWaterEntryDialog from "@/components/dashboard/AddWaterEntryDialog"; // Import the new dialog
@@ -11,7 +11,7 @@ import { useFoodEntries } from "@/hooks/useFoodEntries";
 import { useWaterIntake } from "@/hooks/useWaterIntake";
 import { useAuth } from "@/providers/AuthProvider"; // Corrected import path for useAuth
 import { format } from "date-fns";
-import { MealPlan } from "@/lib/supabase"; // Import MealPlan type
+import { MealTypeEnum } from "@/lib/supabase"; // Import MealTypeEnum
 
 const Dashboard = () => {
   const { user } = useAuth(); // Use useAuth from AuthProvider
@@ -66,7 +66,7 @@ const Dashboard = () => {
   };
 
   // Group food entries by meal type for TodaysMealPlan
-  const mealsForToday: MealPlan[] = [
+  const mealsForToday: TodaysMealPlanProps[] = [ // Use the component's MealPlan type
     { title: "Breakfast", date: new Date(), mealType: "breakfast", items: [], totalCalories: 0 },
     { title: "Lunch", date: new Date(), mealType: "lunch", items: [], totalCalories: 0 },
     { title: "Dinner", date: new Date(), mealType: "dinner", items: [], totalCalories: 0 },
@@ -74,14 +74,14 @@ const Dashboard = () => {
   ];
 
   foodEntries.forEach(entry => {
-    const mealTypeIndex = mealsForToday.findIndex(meal => meal.mealType === entry.meal_type);
+    const mealTypeIndex = mealsForToday.findIndex(meal => meal.mealType === entry.meal_type); // Corrected to entry.meal_type
     if (mealTypeIndex !== -1) {
       mealsForToday[mealTypeIndex].items.push({
         name: entry.food_name,
         calories: entry.calories,
         prepTime: 0, // Prep time not available in food_entries, default to 0
       });
-      mealsForToday[mealTypeIndex].totalCalories += entry.calories;
+      mealsForToday[mealTypeIndex].totalCalories += entry.calories; // Corrected to totalCalories
     }
   });
 
