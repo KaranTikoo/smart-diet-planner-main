@@ -40,14 +40,14 @@ export const useWeightEntries = (limit?: number) => {
     if (!user) return
 
     try {
+      const weightEntryData: Database['public']['Tables']['weight_entries']['Insert'] = {
+        ...entry,
+        user_id: user.id,
+      };
+
       const { data, error } = await supabase
         .from('weight_entries')
-        .insert([
-          {
-            ...entry,
-            user_id: user.id,
-          },
-        ] as Database['public']['Tables']['weight_entries']['Insert'][]) // Explicitly cast the array
+        .insert([weightEntryData])
         .select()
         .single()
 
@@ -66,9 +66,11 @@ export const useWeightEntries = (limit?: number) => {
     if (!user) return
 
     try {
+      const weightEntryUpdates: Database['public']['Tables']['weight_entries']['Update'] = updates;
+
       const { data, error } = await supabase
         .from('weight_entries')
-        .update(updates as Database['public']['Tables']['weight_entries']['Update']) // Explicitly cast the object
+        .update(weightEntryUpdates)
         .eq('id', id)
         .eq('user_id', user.id)
         .select()

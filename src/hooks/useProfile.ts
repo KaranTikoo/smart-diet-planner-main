@@ -45,15 +45,15 @@ export const useProfile = () => {
 
     setIsSaving(true);
     try {
+      const profileData: Database['public']['Tables']['profiles']['Insert'] = {
+        id: user.id,
+        email: user.email,
+        ...updates,
+      };
+
       const { data, error } = await supabase
         .from('profiles')
-        .upsert([
-          {
-            id: user.id,
-            email: user.email, // Use user.email directly, as we've checked it's not null
-            ...updates,
-          },
-        ] as Database['public']['Tables']['profiles']['Insert'][]) // Explicitly cast the array
+        .upsert([profileData]) // Pass the explicitly typed object in an array
         .select()
         .single()
 

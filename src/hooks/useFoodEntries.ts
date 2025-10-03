@@ -40,14 +40,14 @@ export const useFoodEntries = (date?: string) => {
     if (!user || !supabase) return
 
     try {
+      const foodEntryData: Database['public']['Tables']['food_entries']['Insert'] = {
+        ...entry,
+        user_id: user.id,
+      };
+
       const { data, error } = await supabase
         .from('food_entries')
-        .insert([
-          {
-            ...entry,
-            user_id: user.id,
-          },
-        ] as Database['public']['Tables']['food_entries']['Insert'][]) // Explicitly cast the array
+        .insert([foodEntryData])
         .select()
         .single()
 
@@ -66,9 +66,11 @@ export const useFoodEntries = (date?: string) => {
     if (!user || !supabase) return
 
     try {
+      const foodEntryUpdates: Database['public']['Tables']['food_entries']['Update'] = updates;
+
       const { data, error } = await supabase
         .from('food_entries')
-        .update(updates as Database['public']['Tables']['food_entries']['Update']) // Explicitly cast the object
+        .update(foodEntryUpdates)
         .eq('id', id)
         .eq('user_id', user.id)
         .select()

@@ -40,15 +40,15 @@ export const useWaterIntake = (date?: string) => {
     if (!user || !supabase) return
 
     try {
+      const waterIntakeData: Database['public']['Tables']['water_intake']['Insert'] = {
+        user_id: user.id,
+        amount_ml,
+        entry_date,
+      };
+
       const { data, error } = await supabase
         .from('water_intake')
-        .insert([
-          {
-            user_id: user.id,
-            amount_ml,
-            entry_date,
-          },
-        ] as Database['public']['Tables']['water_intake']['Insert'][]) // Explicitly cast the array
+        .insert([waterIntakeData])
         .select()
         .single()
 
@@ -67,9 +67,11 @@ export const useWaterIntake = (date?: string) => {
     if (!user || !supabase) return
 
     try {
+      const waterIntakeUpdates: Database['public']['Tables']['water_intake']['Update'] = updates;
+
       const { data, error } = await supabase
         .from('water_intake')
-        .update(updates as Database['public']['Tables']['water_intake']['Update']) // Explicitly cast the object
+        .update(waterIntakeUpdates)
         .eq('id', id)
         .eq('user_id', user.id)
         .select()
