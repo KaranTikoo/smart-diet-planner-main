@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { InfoIcon, Plus } from "lucide-react";
+import { Plus, Info } from "lucide-react";
 
 interface FoodCardProps {
   title: string;
@@ -13,8 +12,8 @@ interface FoodCardProps {
   fat: number;
   tags: string[];
   image?: string;
-  onAdd?: () => void;
-  onDetails?: () => void;
+  onDetails: () => void;
+  onAdd: () => void;
 }
 
 const FoodCard = ({
@@ -26,66 +25,45 @@ const FoodCard = ({
   fat,
   tags,
   image,
-  onAdd,
   onDetails,
+  onAdd,
 }: FoodCardProps) => {
   return (
-    <Card className="overflow-hidden h-full flex flex-col">
+    <Card className="flex flex-col h-full">
       {image && (
-        <div className="h-40 overflow-hidden">
-          <img src={image} alt={title} className="w-full h-full object-cover" />
+        <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
+          <img
+            src={image}
+            alt={title}
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = "https://via.placeholder.com/400x200?text=No+Image"; // Fallback image
+              e.currentTarget.onerror = null; // Prevent infinite loop
+            }}
+          />
         </div>
       )}
-      
-      <CardHeader className={image ? "pb-2" : "pb-0"}>
-        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+      <CardHeader className="flex-grow">
+        <CardTitle className="text-lg">{title}</CardTitle>
         <CardDescription className="line-clamp-2">{description}</CardDescription>
       </CardHeader>
-      
-      <CardContent className="pb-2 flex-grow">
-        <div className="flex justify-between text-sm mb-2">
-          <div className="text-center">
-            <p className="font-medium">{calories}</p>
-            <p className="text-xs text-muted-foreground">Calories</p>
-          </div>
-          <div className="text-center">
-            <p className="font-medium">{protein}g</p>
-            <p className="text-xs text-muted-foreground">Protein</p>
-          </div>
-          <div className="text-center">
-            <p className="font-medium">{carbs}g</p>
-            <p className="text-xs text-muted-foreground">Carbs</p>
-          </div>
-          <div className="text-center">
-            <p className="font-medium">{fat}g</p>
-            <p className="text-xs text-muted-foreground">Fat</p>
-          </div>
+      <CardContent className="space-y-2">
+        <div className="flex justify-between text-sm">
+          <span className="font-medium">{calories} kcal</span>
+          <span className="text-muted-foreground">{protein}g P / {carbs}g C / {fat}g F</span>
         </div>
-        
-        <div className="flex flex-wrap gap-1 mt-3">
-          {tags.map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs bg-muted">
-              {tag}
-            </Badge>
+        <div className="flex flex-wrap gap-1">
+          {tags.map((tag, index) => (
+            <Badge key={index} variant="secondary">{tag}</Badge>
           ))}
         </div>
       </CardContent>
-      
-      <CardFooter className="pt-0 flex justify-between gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={onDetails}
-        >
-          <InfoIcon className="h-4 w-4 mr-1" /> Details
+      <CardFooter className="flex justify-between gap-2 pt-4">
+        <Button variant="outline" size="sm" onClick={onDetails} className="flex-1">
+          <Info className="mr-2 h-4 w-4" /> Details
         </Button>
-        <Button
-          size="sm"
-          className="w-full"
-          onClick={onAdd}
-        >
-          <Plus className="h-4 w-4 mr-1" /> Add
+        <Button size="sm" onClick={onAdd} className="flex-1">
+          <Plus className="mr-2 h-4 w-4" /> Add
         </Button>
       </CardFooter>
     </Card>
