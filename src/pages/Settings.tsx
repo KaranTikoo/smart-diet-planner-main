@@ -17,11 +17,13 @@ import { toast } from "sonner";
 import { useAuth } from "@/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 
 const Settings = () => {
-  const { user, signOut } = useAuth();
+  const { user, isGuest, signOut } = useAuth(); // Get isGuest from useAuth
   const { profile, saveProfile, loading: profileLoading } = useProfile();
   const [localProfile, setLocalProfile] = useState<Partial<Profile>>({});
+  const navigate = useNavigate(); // Initialize useNavigate
 
   // Local state for preferences not directly in Supabase 'profiles' table
   const [localDietaryPreferences, setLocalDietaryPreferences] = useState({
@@ -75,7 +77,7 @@ const Settings = () => {
       if (allergies.includes(allergy)) {
         return { ...prev, allergies: allergies.filter((a) => a !== allergy) };
       } else {
-        return { ...prev, allergies: [...allergies, allergy] };
+        return { ...allergies, allergy };
       }
     });
   };
@@ -152,6 +154,7 @@ const Settings = () => {
                       value={localProfile.full_name || ""}
                       onChange={(e) => handleProfileChange("full_name", e.target.value)}
                       placeholder="Enter your name"
+                      disabled={isGuest} // Disable if guest
                     />
                   </div>
                   
@@ -165,6 +168,7 @@ const Settings = () => {
                       placeholder="Enter your age"
                       min="18"
                       max="100"
+                      disabled={isGuest} // Disable if guest
                     />
                   </div>
                   
@@ -174,6 +178,7 @@ const Settings = () => {
                       value={localProfile.gender || ""}
                       onValueChange={(value: GenderEnum) => handleProfileChange("gender", value)}
                       className="flex gap-4"
+                      disabled={isGuest} // Disable if guest
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="male" id="gender-male" />
@@ -200,6 +205,7 @@ const Settings = () => {
                       placeholder="Enter your height in cm"
                       min="100"
                       max="250"
+                      disabled={isGuest} // Disable if guest
                     />
                   </div>
                   
@@ -213,6 +219,7 @@ const Settings = () => {
                       placeholder="Enter your weight in kg"
                       min="30"
                       max="300"
+                      disabled={isGuest} // Disable if guest
                     />
                   </div>
                   
@@ -226,6 +233,7 @@ const Settings = () => {
                       placeholder="Enter your target weight"
                       min="30"
                       max="300"
+                      disabled={isGuest} // Disable if guest
                     />
                   </div>
                 </div>
@@ -239,6 +247,7 @@ const Settings = () => {
                       value={localProfile.goal_type || "lose_weight"}
                       onValueChange={(value: GoalTypeEnum) => handleProfileChange("goal_type", value)}
                       className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
+                      disabled={isGuest} // Disable if guest
                     >
                       <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
                         <RadioGroupItem value="lose_weight" id="goal-weight-loss" />
@@ -260,6 +269,7 @@ const Settings = () => {
                     <Select
                       value={localProfile.activity_level || "moderately_active"}
                       onValueChange={(value: ActivityLevelEnum) => handleProfileChange("activity_level", value)}
+                      disabled={isGuest} // Disable if guest
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select activity level" />
@@ -276,7 +286,7 @@ const Settings = () => {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
-                <Button onClick={handleSaveChanges} disabled={profileLoading}>Save Changes</Button>
+                <Button onClick={handleSaveChanges} disabled={profileLoading || isGuest}>Save Changes</Button>
               </CardFooter>
             </Card>
             
@@ -294,6 +304,7 @@ const Settings = () => {
                     <Select
                       value={localDietaryPreferences.diet}
                       onValueChange={(value) => handleLocalDietaryChange("diet", value)}
+                      disabled={isGuest} // Disable if guest
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select diet type" />
@@ -321,6 +332,7 @@ const Settings = () => {
                             id={`allergy-${allergy}`}
                             checked={localDietaryPreferences.allergies.includes(allergy)}
                             onCheckedChange={() => handleAllergiesChange(allergy)}
+                            disabled={isGuest} // Disable if guest
                           />
                           <Label htmlFor={`allergy-${allergy}`} className="capitalize">
                             {allergy}
@@ -338,6 +350,7 @@ const Settings = () => {
                       onChange={(e) => handleLocalDietaryChange("avoidFoods", e.target.value)}
                       placeholder="List any specific foods you want to avoid"
                       rows={3}
+                      disabled={isGuest} // Disable if guest
                     />
                   </div>
                   
@@ -350,6 +363,7 @@ const Settings = () => {
                         max={6}
                         step={1}
                         onValueChange={(value) => handleLocalDietaryChange("mealsPerDay", value[0])}
+                        disabled={isGuest} // Disable if guest
                       />
                       <div className="flex justify-between mt-2 text-sm text-muted-foreground">
                         <span>2</span>
@@ -368,6 +382,7 @@ const Settings = () => {
                       value={localDietaryPreferences.budget}
                       onValueChange={(value) => handleLocalDietaryChange("budget", value)}
                       className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
+                      disabled={isGuest} // Disable if guest
                     >
                       <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
                         <RadioGroupItem value="low" id="budget-low" />
@@ -389,6 +404,7 @@ const Settings = () => {
                     <Select
                       value={localDietaryPreferences.preparationTime}
                       onValueChange={(value) => handleLocalDietaryChange("preparationTime", value)}
+                      disabled={isGuest} // Disable if guest
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select cooking time preference" />
@@ -403,7 +419,79 @@ const Settings = () => {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
-                <Button onClick={handleSaveChanges} disabled={profileLoading}>Save Changes</Button>
+                <Button onClick={handleSaveChanges} disabled={profileLoading || isGuest}>Save Changes</Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+          
+          {/* Notifications Settings */}
+          <TabsContent value="notifications" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Notification Preferences</CardTitle>
+                <CardDescription>
+                  Control how you receive updates and reminders
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="meal-reminders">Meal Reminders</Label>
+                  <Switch
+                    id="meal-reminders"
+                    checked={notifications.mealReminders}
+                    onCheckedChange={(value) => handleNotificationChange("mealReminders", value)}
+                    disabled={isGuest}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="weekly-reports">Weekly Progress Reports</Label>
+                  <Switch
+                    id="weekly-reports"
+                    checked={notifications.weeklyReports}
+                    onCheckedChange={(value) => handleNotificationChange("weeklyReports", value)}
+                    disabled={isGuest}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="goal-achievements">Goal Achievements</Label>
+                  <Switch
+                    id="goal-achievements"
+                    checked={notifications.goalAchievements}
+                    onCheckedChange={(value) => handleNotificationChange("goalAchievements", value)}
+                    disabled={isGuest}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="meal-plans">New Meal Plans</Label>
+                  <Switch
+                    id="meal-plans"
+                    checked={notifications.mealPlans}
+                    onCheckedChange={(value) => handleNotificationChange("mealPlans", value)}
+                    disabled={isGuest}
+                  />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="email-notifications">Email Notifications</Label>
+                  <Switch
+                    id="email-notifications"
+                    checked={notifications.emailNotifications}
+                    onCheckedChange={(value) => handleNotificationChange("emailNotifications", value)}
+                    disabled={isGuest}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="push-notifications">Push Notifications</Label>
+                  <Switch
+                    id="push-notifications"
+                    checked={notifications.pushNotifications}
+                    onCheckedChange={(value) => handleNotificationChange("pushNotifications", value)}
+                    disabled={isGuest}
+                  />
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-end">
+                <Button onClick={handleSaveChanges} disabled={profileLoading || isGuest}>Save Changes</Button>
               </CardFooter>
             </Card>
           </TabsContent>
@@ -414,75 +502,88 @@ const Settings = () => {
               <CardHeader>
                 <CardTitle>Account Information</CardTitle>
                 <CardDescription>
-                  Manage your account settings and security
+                  {isGuest ? "Create an account or log in to save your progress." : "Manage your account settings and security"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary">
-                    <span className="text-2xl font-semibold text-primary-foreground">
-                      {user?.email ? user.email[0].toUpperCase() : "U"}
-                    </span>
+                {isGuest ? (
+                  <div className="text-center space-y-4 py-8">
+                    <p className="text-lg font-medium">You are currently browsing as a guest.</p>
+                    <p className="text-muted-foreground">Create an account or log in to unlock all features and save your data.</p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+                      <Button onClick={() => navigate("/login")}>Login</Button>
+                      <Button variant="outline" onClick={() => navigate("/login")}>Sign Up</Button>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{user?.email || "User"}</p>
-                    <p className="text-sm text-muted-foreground">Free Plan</p>
-                  </div>
-                  <div className="ml-auto flex items-center text-primary">
-                    <BadgeCheck className="h-5 w-5 mr-1" />
-                    <span className="text-sm font-medium">Verified</span>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Email Address</h3>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={user?.email || ""}
-                      disabled
-                      className="flex-grow"
-                    />
-                    <Button variant="outline" disabled>Change</Button> {/* Change email not implemented */}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    This is the email address associated with your account
-                  </p>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Password</h3>
-                  <Button variant="outline" onClick={handleResetPassword}>
-                    Reset Password
-                  </Button>
-                  <p className="text-sm text-muted-foreground">
-                    We'll send a password reset link to your email
-                  </p>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Data & Privacy</h3>
-                  <div className="flex space-x-2">
-                    <Button variant="outline" disabled>Download My Data</Button> {/* Download data not implemented */}
-                    <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10" onClick={handleDeleteAccount}>
-                      Delete Account
-                    </Button>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Deleting your account will remove all your data permanently
-                  </p>
-                </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary">
+                        <span className="text-2xl font-semibold text-primary-foreground">
+                          {user?.email ? user.email[0].toUpperCase() : "U"}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium">{user?.email || "User"}</p>
+                        <p className="text-sm text-muted-foreground">Free Plan</p>
+                      </div>
+                      <div className="ml-auto flex items-center text-primary">
+                        <BadgeCheck className="h-5 w-5 mr-1" />
+                        <span className="text-sm font-medium">Verified</span>
+                      </div>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Email Address</h3>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={user?.email || ""}
+                          disabled
+                          className="flex-grow"
+                        />
+                        <Button variant="outline" disabled>Change</Button> {/* Change email not implemented */}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        This is the email address associated with your account
+                      </p>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Password</h3>
+                      <Button variant="outline" onClick={handleResetPassword}>
+                        Reset Password
+                      </Button>
+                      <p className="text-sm text-muted-foreground">
+                        We'll send a password reset link to your email
+                      </p>
+                    </div>
+                    
+                    <Separator />
+                    
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Data & Privacy</h3>
+                      <div className="flex space-x-2">
+                        <Button variant="outline" disabled>Download My Data</Button> {/* Download data not implemented */}
+                        <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10" onClick={handleDeleteAccount}>
+                          Delete Account
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Deleting your account will remove all your data permanently
+                      </p>
+                    </div>
+                  </>
+                )}
               </CardContent>
               <CardFooter className="flex justify-between">
                 <Button variant="outline" className="flex items-center gap-2 text-destructive border-destructive hover:bg-destructive/10" onClick={handleLogout} disabled={profileLoading}>
-                  <LogOut className="h-4 w-4" /> Logout
+                  <LogOut className="h-4 w-4" /> {isGuest ? "Exit Guest Mode" : "Logout"}
                 </Button>
-                <Button onClick={handleSaveChanges} disabled={profileLoading}>Save Changes</Button>
+                {!isGuest && <Button onClick={handleSaveChanges} disabled={profileLoading}>Save Changes</Button>}
               </CardFooter>
             </Card>
           </TabsContent>

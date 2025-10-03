@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import {
   X
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/providers/AuthProvider"; // Import useAuth
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -22,18 +22,11 @@ interface MainLayoutProps {
 const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, isGuest, signOut } = useAuth(); // Get user, isGuest, and signOut from useAuth
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  useEffect(() => {
-    const storedEmail = localStorage.getItem("userEmail");
-    setUserEmail(storedEmail);
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("userEmail");
-    toast.success("Logged out successfully");
+  const handleLogout = async () => {
+    await signOut(); // Use the signOut function from useAuth
     navigate("/login");
   };
 
@@ -49,6 +42,10 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  const displayUserName = isGuest ? "Guest" : (user?.email || "User");
+  const displayUserInitial = isGuest ? "G" : (user?.email ? user.email[0].toUpperCase() : "U");
+  const logoutButtonText = isGuest ? "Exit Guest Mode" : "Logout";
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
@@ -84,7 +81,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
             onClick={handleLogout}
           >
             <LogOut className="h-5 w-5" />
-            <span>Logout</span>
+            <span>{logoutButtonText}</span>
           </Button>
         </nav>
       )}
@@ -115,11 +112,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
             <div className="flex items-center gap-3 px-4 py-2 mb-3">
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary">
                 <span className="text-primary-foreground font-semibold">
-                  {userEmail ? userEmail[0].toUpperCase() : "U"}
+                  {displayUserInitial}
                 </span>
               </div>
               <div className="flex-1 truncate">
-                <p className="text-sm font-medium">{userEmail || "User"}</p>
+                <p className="text-sm font-medium">{displayUserName}</p>
               </div>
             </div>
             <Button 
@@ -128,7 +125,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4" />
-              <span>Logout</span>
+              <span>{logoutButtonText}</span>
             </Button>
           </div>
         </div>
