@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase, WaterIntake } from '@/lib/supabase'
 import { useAuth } from '@/providers/AuthProvider' // Corrected import path
 import { toast } from 'sonner'
-import { TablesInsert, TablesUpdate } from '@/integrations/supabase/types' // Import TablesInsert and TablesUpdate
+import { Database } from '@/integrations/supabase/types' // Import Database type
 
 export const useWaterIntake = (date?: string) => {
   const { user } = useAuth()
@@ -47,8 +47,8 @@ export const useWaterIntake = (date?: string) => {
             user_id: user.id,
             amount_ml,
             entry_date,
-          } as TablesInsert<'water_intake'>, // Explicitly cast to TablesInsert<'water_intake'>
-        ])
+          },
+        ] as Database['public']['Tables']['water_intake']['Insert'][]) // Explicitly cast the array
         .select()
         .single()
 
@@ -69,7 +69,7 @@ export const useWaterIntake = (date?: string) => {
     try {
       const { data, error } = await supabase
         .from('water_intake')
-        .update(updates as TablesUpdate<'water_intake'>) // Explicitly cast to TablesUpdate<'water_intake'>
+        .update(updates as Database['public']['Tables']['water_intake']['Update']) // Explicitly cast the object
         .eq('id', id)
         .eq('user_id', user.id)
         .select()

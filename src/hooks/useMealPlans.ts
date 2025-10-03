@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase, MealPlan, MealTypeEnum } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { toast } from 'sonner';
-import { TablesInsert, TablesUpdate } from '@/integrations/supabase/types'; // Import TablesInsert and TablesUpdate
+import { Database } from '@/integrations/supabase/types'; // Import Database type
 
 export const useMealPlans = (date?: string) => {
   const { user } = useAuth();
@@ -47,8 +47,8 @@ export const useMealPlans = (date?: string) => {
           {
             ...plan,
             user_id: user.id,
-          } as TablesInsert<'meal_plans'>, // Explicitly cast to TablesInsert<'meal_plans'>
-        ])
+          },
+        ] as Database['public']['Tables']['meal_plans']['Insert'][]) // Explicitly cast the array
         .select()
         .single();
 
@@ -69,7 +69,7 @@ export const useMealPlans = (date?: string) => {
     try {
       const { data, error } = await supabase
         .from('meal_plans')
-        .update(updates as TablesUpdate<'meal_plans'>) // Explicitly cast to TablesUpdate<'meal_plans'>
+        .update(updates as Database['public']['Tables']['meal_plans']['Update']) // Explicitly cast the object
         .eq('id', id)
         .eq('user_id', user.id)
         .select()
