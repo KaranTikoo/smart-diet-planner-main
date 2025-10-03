@@ -58,11 +58,13 @@ const AuthForm = () => {
     setIsLoading(false);
 
     if (!error) {
-      // Supabase sends a verification email, then user can log in.
-      // For a smoother UX, we might redirect to onboarding after successful signup,
-      // assuming email verification happens in the background or is not strictly enforced for onboarding.
-      // For now, we'll redirect to onboarding.
-      navigate("/onboarding");
+      // After successful signup, Supabase sends a verification email.
+      // The user needs to verify their email before they can log in.
+      // We should not redirect to onboarding immediately.
+      toast.success("Account created! Please check your email to verify your account, then log in.");
+      // Optionally, clear the form or switch to login tab
+      setAuthData({ email: "", password: "" });
+      // No navigation here. User should manually go to login after verification.
     }
   };
 
