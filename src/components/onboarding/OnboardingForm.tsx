@@ -19,7 +19,7 @@ import { User } from '@supabase/supabase-js'; // Import User type
 const OnboardingForm = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { profile, saveProfile, loading: profileLoading, isSaving } = useProfile(); // Use saveProfile
+  const { profile, saveProfile, loading: profileLoading, isSaving } = useProfile();
   const [currentStep, setCurrentStep] = useState(1);
   const [onboardingData, setOnboardingData] = useState<Partial<Profile>>({
     full_name: "",
@@ -44,7 +44,7 @@ const OnboardingForm = () => {
         goal_type: profile.goal_type,
         goal_weight: profile.goal_weight,
         activity_level: profile.activity_level,
-        daily_calorie_goal: profile.daily_calorie_goal, // Ensure daily_calorie_goal is loaded
+        daily_calorie_goal: profile.daily_calorie_goal,
       });
     }
   }, [profile, profileLoading]);
@@ -82,8 +82,9 @@ const OnboardingForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user) { // This check is crucial
-      toast.error("Authentication error: User not found.");
+    if (!user) {
+      toast.error("Authentication error: User not found. Please log in again.");
+      navigate("/login"); // Redirect to login if user is unexpectedly null
       return;
     }
 
@@ -97,7 +98,7 @@ const OnboardingForm = () => {
     }
 
     try {
-      const profileDataToSave: Partial<Profile> = { // Use Partial<Profile> as we're not sending all fields
+      const profileDataToSave: Partial<Profile> = {
         full_name: onboardingData.full_name || null,
         age: onboardingData.age || null,
         gender: onboardingData.gender as GenderEnum || null,
@@ -106,11 +107,10 @@ const OnboardingForm = () => {
         goal_type: onboardingData.goal_type as GoalTypeEnum || null,
         goal_weight: onboardingData.goal_weight || null,
         activity_level: onboardingData.activity_level as ActivityLevelEnum || null,
-        daily_calorie_goal: onboardingData.daily_calorie_goal || 2000, // Provide a default if null
+        daily_calorie_goal: onboardingData.daily_calorie_goal || 2000,
       };
 
-      // Always call saveProfile, which uses upsert
-      await saveProfile(user, profileDataToSave); // Pass user here
+      await saveProfile(user, profileDataToSave);
       
       toast.success("Profile created/updated successfully!");
       navigate("/dashboard");
@@ -141,6 +141,25 @@ const OnboardingForm = () => {
   };
 
   const isButtonDisabled = authLoading || profileLoading || isSaving;
+
+  // Render loading state or redirect if user is not authenticated
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-lg text-muted-foreground">Loading user session...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    // If not loading and no user, redirect to login. This should ideally be caught by RequireAuth,
+    // but as a fallback, we ensure the onboarding form isn't rendered in an unauthenticated state.
+    useEffect(() => {
+      toast.error("You must be logged in to complete onboarding.");
+      navigate("/login");
+    }, [navigate]);
+    return null; // Don't render anything while redirecting
+  }
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
