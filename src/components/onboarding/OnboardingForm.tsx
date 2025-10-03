@@ -425,17 +425,17 @@ const OnboardingForm = () => {
             type="button"
             variant="outline"
             onClick={prevStep}
-            disabled={currentStep === 1 || isSaving || authLoading}
+            disabled={currentStep === 1 || isSaving}
           >
             Previous
           </Button>
           
           {currentStep < 3 ? (
-            <Button type="button" onClick={nextStep} disabled={isSaving || authLoading}>
+            <Button type="button" onClick={nextStep} disabled={isSaving}>
               Next
             </Button>
           ) : (
-            <Button type="submit" disabled={isSaving || authLoading}>
+            <Button type="submit" disabled={isSaving}>
               {isSaving ? "Saving..." : "Complete Setup"}
             </Button>
           )}
