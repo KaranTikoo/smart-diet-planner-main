@@ -10,7 +10,7 @@ import FoodSearchBar from "@/components/food-search/FoodSearchBar";
 import FoodDetailDialog from "@/components/food-search/FoodDetailDialog";
 import MobileFiltersDialog from "@/components/food-search/MobileFiltersDialog";
 import NoResultsMessage from "@/components/food-search/NoResultsMessage";
-import mockFoodDatabase from "@/data/mockFoodDatabase";
+import { mockFoodDatabase } from "@/data/mockFoodDatabase";
 
 const FoodSearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
