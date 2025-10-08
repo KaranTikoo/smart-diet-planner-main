@@ -11,7 +11,7 @@ export const americanFoods: FoodItem[] = [
     fat: 18,
     tags: ["high-protein", "low-carb"],
     prepTime: 20,
-    image: "https://www.jocooks.com/wp-content/uploads/2020/04/grilled-chicken-salad-1-12.jpg",
+    image: "https://www.freepik.com/free-photo/baked-chicken-breast-fresh-vegetables-plate_7121182.htm#fromView=search&page=1&position=21&uuid=1db976a8-55ef-4adf-a8ea-00ecb8d3b007&query=Grilled+Chicken+Salad",
     ingredients: ["chicken breast", "mixed greens", "tomatoes", "cucumber", "balsamic vinaigrette"],
     mealType: "lunch",
     dietTypes: ["gluten-free"],
