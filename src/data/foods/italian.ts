@@ -11,7 +11,7 @@ export const italianFoods: FoodItem[] = [
     fat: 18,
     tags: ["italian", "vegetarian", "quick"],
     prepTime: 15,
-    image: "https://www.jocooks.com/wp-content/uploads/2019/02/aglio-olio-1-12.jpg",
+    image: "/healthy-pasta.jpg", // <-- Updated to use an image from the public folder
     ingredients: ["spaghetti", "garlic", "olive oil", "chili flakes", "parsley"],
     mealType: "dinner",
     dietTypes: ["vegetarian"],
