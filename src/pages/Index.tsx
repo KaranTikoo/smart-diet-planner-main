@@ -83,7 +83,7 @@ const Index = () => {
                 3
               </div>
               <h3 className="text-xl font-semibold mb-2">Track & Achieve</h3>
-              <p className="text-gray-600">Log your meals, track your progress, and reach your health goals faster.</p>
+              <p className="text-gray-600">L og your meals, track your progress, and reach your health goals faster.</p>
             </div>
           </div>
         </div>
@@ -93,6 +93,9 @@ const Index = () => {
       <section className="py-16 bg-gray-100">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">What Our Users Say</h2>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            Join these satisfied users who transformed their eating habits
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
             <Card className="p-6 shadow-md">
               <CardContent className="text-gray-700 italic">
@@ -140,7 +143,7 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-8">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 text-center">
           <div className="flex flex-col md:flex-row justify-between items-center mb-6">
             <div className="mb-4 md:mb-0">
               <h3 className="text-2xl font-bold">Smart Diet Planner</h3>
