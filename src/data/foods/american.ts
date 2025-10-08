@@ -11,7 +11,7 @@ export const americanFoods: FoodItem[] = [
     fat: 18,
     tags: ["high-protein", "low-carb"],
     prepTime: 20,
-    image: "https://www.freepik.com/free-photo/baked-chicken-breast-fresh-vegetables-plate_7121182.htm#fromView=search&page=1&position=21&uuid=1db976a8-55ef-4adf-a8ea-00ecb8d3b007&query=Grilled+Chicken+Salad",
+    image: "https://images.unsplash.com/photo-1512621776951-a5739df160f1?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     ingredients: ["chicken breast", "mixed greens", "tomatoes", "cucumber", "balsamic vinaigrette"],
     mealType: "lunch",
     dietTypes: ["gluten-free"],
