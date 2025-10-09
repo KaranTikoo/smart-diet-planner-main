@@ -16,6 +16,7 @@ import GenerateRecipeDialog from "@/components/meal-planner/GenerateRecipeDialog
 import MealDetailDialog from "@/components/meal-planner/MealDetailDialog"; // New import for meal details dialog
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { useSearchParams } from "react-router-dom"; // Import useSearchParams
 
 // Helper to map Supabase MealPlan to what MealPlanCard expects
 const mapSupabaseMealPlanToCardProps = (supabasePlan: SupabaseMealPlan) => {
@@ -33,7 +34,11 @@ const mapSupabaseMealPlanToCardProps = (supabasePlan: SupabaseMealPlan) => {
 };
 
 const MealPlanner = () => {
-  const [date, setDate] = useState<Date>(new Date());
+  const [searchParams] = useSearchParams();
+  const dateParam = searchParams.get('date');
+  const initialDate = dateParam ? new Date(dateParam) : new Date();
+
+  const [date, setDate] = useState<Date>(initialDate);
   const formattedDate = format(date, 'yyyy-MM-dd');
   const { mealPlans, loading: isLoadingMealPlans, refetch: refetchMealPlans, addMealPlan } = useMealPlans(formattedDate);
   const { items: inventoryItems, loading: isLoadingInventory } = useInventory(); // Fetch inventory
