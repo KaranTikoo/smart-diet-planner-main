@@ -13,6 +13,7 @@ import { MealPlan as SupabaseMealPlan, MealTypeEnum, supabase } from "@/lib/supa
 import { useInventory } from "@/hooks/useInventory"; // Import useInventory
 import { mockFoodDatabase } from "@/data/mockFoodDatabase"; // For simulated generation
 import GenerateRecipeDialog from "@/components/meal-planner/GenerateRecipeDialog"; // New dialog import
+import MealDetailDialog from "@/components/meal-planner/MealDetailDialog"; // New import for meal details dialog
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
@@ -39,6 +40,7 @@ const MealPlanner = () => {
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [isGenerateRecipeDialogOpen, setIsGenerateRecipeDialogOpen] = useState(false);
   const [prioritizeInventory, setPrioritizeInventory] = useState(false);
+  const [selectedMealForDetails, setSelectedMealForDetails] = useState<SupabaseMealPlan | null>(null); // New state for meal details dialog
 
   // Group meal plans by meal type for easy access
   const mealsForSelectedDay: Record<MealTypeEnum, SupabaseMealPlan | null> = {
@@ -123,6 +125,9 @@ const MealPlanner = () => {
                 serving_size: "1 serving",
                 serving_quantity: 1,
                 prepTime: selectedFood.prepTime,
+                image: selectedFood.image, // Include image for display in details
+                ingredients: selectedFood.ingredients, // Include ingredients for display
+                description: selectedFood.description, // Include description
               },
             ],
             total_calories: selectedFood.calories,
@@ -144,8 +149,13 @@ const MealPlanner = () => {
     }
   };
 
-  const handleMealClick = (mealType: string) => {
-    toast.info(`Viewing details for ${mealType}`);
+  const handleMealCardClick = (mealType: MealTypeEnum) => {
+    const meal = mealsForSelectedDay[mealType];
+    if (meal && meal.foods && (meal.foods as any[]).length > 0) {
+      setSelectedMealForDetails(meal);
+    } else {
+      toast.info(`No ${mealType} planned for this day.`);
+    }
   };
 
   // Calculate daily summary from fetched meal plans
@@ -260,19 +270,19 @@ const MealPlanner = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <MealPlanCard 
                       {...getMealPlanCardProps("breakfast")}
-                      onClick={() => handleMealClick("breakfast")}
+                      onClick={() => handleMealCardClick("breakfast")}
                     />
                     <MealPlanCard 
                       {...getMealPlanCardProps("lunch")}
-                      onClick={() => handleMealClick("lunch")}
+                      onClick={() => handleMealCardClick("lunch")}
                     />
                     <MealPlanCard 
                       {...getMealPlanCardProps("dinner")}
-                      onClick={() => handleMealClick("dinner")}
+                      onClick={() => handleMealCardClick("dinner")}
                     />
                     <MealPlanCard 
                       {...getMealPlanCardProps("snack")}
-                      onClick={() => handleMealClick("snack")}
+                      onClick={() => handleMealCardClick("snack")}
                     />
                   </div>
                 )}
@@ -329,6 +339,13 @@ const MealPlanner = () => {
           onOpenChange={setIsGenerateRecipeDialogOpen}
           selectedDate={date}
           onMealPlanUpdated={refetchMealPlans}
+        />
+
+        {/* Meal Details Dialog */}
+        <MealDetailDialog
+          isOpen={!!selectedMealForDetails}
+          onClose={() => setSelectedMealForDetails(null)}
+          meal={selectedMealForDetails}
         />
       </div>
     </MainLayout>
