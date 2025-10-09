@@ -130,7 +130,7 @@ export type Database = {
           plan_name: string
           plan_date: string
           meal_type: Database['public']['Enums']['meal_type_enum']
-          foods: Json // This should be a JSON type
+          foods: Json | null // Added foods column
           total_calories: number | null
           prep_time: number | null
           created_at: string
@@ -142,7 +142,7 @@ export type Database = {
           plan_name: string
           plan_date: string
           meal_type: Database['public']['Enums']['meal_type_enum']
-          foods: Json
+          foods?: Json | null // Added foods column
           total_calories?: number | null
           prep_time?: number | null
           created_at?: string
@@ -154,7 +154,7 @@ export type Database = {
           plan_name?: string
           plan_date?: string
           meal_type?: Database['public']['Enums']['meal_type_enum']
-          foods?: Json
+          foods?: Json | null // Added foods column
           total_calories?: number | null
           prep_time?: number | null
           created_at?: string
