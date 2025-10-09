@@ -80,32 +80,24 @@ const Groceries = () => {
     const itemToToggle = items.find(item => item.id === id);
     if (!itemToToggle) return;
 
-    const newCheckedState = !itemToToggle.checked;
+    // Optimistically remove from list
+    setItems(prevItems => prevItems.filter(item => item.id !== id));
 
-    setItems(
-      items.map((item) =>
-        item.id === id ? { ...item, checked: newCheckedState } : item
-      )
-    );
-
-    if (newCheckedState) {
-      // If item is checked, add it to inventory
-      try {
-        await addInventoryItem({
-          name: itemToToggle.name,
-          quantity: 1, // Default quantity
-          unit: "item", // Default unit
-          category: itemToToggle.category,
-          expiration_date: null, // No expiration date from grocery list
-        });
-        toast.success(`'${itemToToggle.name}' added to your inventory!`);
-      } catch (error) {
-        console.error("Failed to add item to inventory:", error);
-        toast.error(`Failed to add '${itemToToggle.name}' to inventory.`);
-      }
-    } else {
-      // If item is unchecked, it remains in inventory but is no longer 'bought' from grocery list perspective
-      toast.info(`'${itemToToggle.name}' marked as not yet bought.`);
+    // Add to inventory
+    try {
+      await addInventoryItem({
+        name: itemToToggle.name,
+        quantity: 1, // Default quantity
+        unit: "item", // Default unit
+        category: itemToToggle.category,
+        expiration_date: null, // No expiration date from grocery list
+      });
+      toast.success(`'${itemToToggle.name}' bought and added to your inventory!`);
+    } catch (error) {
+      console.error("Failed to add item to inventory:", error);
+      toast.error(`Failed to add '${itemToToggle.name}' to inventory.`);
+      // If adding to inventory fails, you might want to add it back to the grocery list
+      setItems(prevItems => [...prevItems, itemToToggle]);
     }
   };
 
