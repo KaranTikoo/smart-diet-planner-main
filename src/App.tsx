@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import MealPlanner from "./pages/MealPlanner";
 import FoodSearch from "./pages/FoodSearch";
 import Groceries from "./pages/Groceries";
+import Inventory from "./pages/Inventory"; // New import
 import Progress from "./pages/Progress";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -57,6 +57,14 @@ const App = () => (
             element={
               <RequireAuth>
                 <Groceries />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/inventory" // New route
+            element={
+              <RequireAuth>
+                <Inventory />
               </RequireAuth>
             }
           />

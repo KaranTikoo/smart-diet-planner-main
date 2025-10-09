@@ -6,6 +6,7 @@ import {
   CalendarDays, 
   Search, 
   ShoppingBasket, 
+  Package, // New import for inventory icon
   BarChart3, 
   Settings, 
   LogOut,
@@ -35,6 +36,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     { path: "/meal-planner", label: "Meal Planner", icon: <CalendarDays className="h-5 w-5" /> },
     { path: "/food-search", label: "Food Search", icon: <Search className="h-5 w-5" /> },
     { path: "/groceries", label: "Grocery List", icon: <ShoppingBasket className="h-5 w-5" /> },
+    { path: "/inventory", label: "Inventory", icon: <Package className="h-5 w-5" /> }, // New navigation item
     { path: "/progress", label: "Progress", icon: <BarChart3 className="h-5 w-5" /> },
     { path: "/settings", label: "Settings", icon: <Settings className="h-5 w-5" /> },
   ];

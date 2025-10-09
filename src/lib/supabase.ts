@@ -9,6 +9,7 @@ export type FoodEntry = Tables<'food_entries'>
 export type WeightEntry = Tables<'weight_entries'>
 export type MealPlan = Tables<'meal_plans'>
 export type WaterIntake = Tables<'water_intake'>
+export type InventoryItem = Tables<'inventory_items'> // New type export
 
 // Export enums for convenience
 export type GenderEnum = Enums<'gender_enum'>
