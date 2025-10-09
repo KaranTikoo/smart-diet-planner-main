@@ -8,8 +8,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { PlusCircle, RefreshCw, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { useMealPlans } from "@/hooks/useMealPlans"; // Import the new hook
-import { MealPlan as SupabaseMealPlan, MealTypeEnum, supabase } from "@/lib/supabase"; // Import Supabase MealPlan type and supabase client
+import { useMealPlans } from "@/hooks/useMealPlans";
+import { MealPlan as SupabaseMealPlan, MealTypeEnum, supabase } from "@/lib/supabase";
+import { useInventory } from "@/hooks/useInventory"; // Import useInventory
+import { mockFoodDatabase } from "@/data/mockFoodDatabase"; // For simulated generation
+import GenerateRecipeDialog from "@/components/meal-planner/GenerateRecipeDialog"; // New dialog import
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 // Helper to map Supabase MealPlan to what MealPlanCard expects
 const mapSupabaseMealPlanToCardProps = (supabasePlan: SupabaseMealPlan) => {
@@ -30,7 +35,10 @@ const MealPlanner = () => {
   const [date, setDate] = useState<Date>(new Date());
   const formattedDate = format(date, 'yyyy-MM-dd');
   const { mealPlans, loading: isLoadingMealPlans, refetch: refetchMealPlans, addMealPlan } = useMealPlans(formattedDate);
+  const { items: inventoryItems, loading: isLoadingInventory } = useInventory(); // Fetch inventory
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [isGenerateRecipeDialogOpen, setIsGenerateRecipeDialogOpen] = useState(false);
+  const [prioritizeInventory, setPrioritizeInventory] = useState(false);
 
   // Group meal plans by meal type for easy access
   const mealsForSelectedDay: Record<MealTypeEnum, SupabaseMealPlan | null> = {
@@ -69,59 +77,61 @@ const MealPlanner = () => {
     setIsGeneratingPlan(true);
     toast.info("Generating new meal plan...");
 
-    // Simulate generating a new meal plan and adding it to Supabase
-    // In a real app, this would involve AI logic or a more complex generation process.
-    const mockMealPlanData = [
-      {
-        plan_name: "Breakfast Plan",
-        plan_date: formattedDate,
-        meal_type: "breakfast" as MealTypeEnum,
-        foods: [
-          { name: "Oatmeal with Berries", calories: 300, prepTime: 10 },
-          { name: "Protein Shake", calories: 150, prepTime: 2 },
-        ],
-        total_calories: 450,
-        prep_time: 12,
-      },
-      {
-        plan_name: "Lunch Plan",
-        plan_date: formattedDate,
-        meal_type: "lunch" as MealTypeEnum,
-        foods: [
-          { name: "Chicken & Veggie Wrap", calories: 400, prepTime: 15 },
-        ],
-        total_calories: 400,
-        prep_time: 15,
-      },
-      {
-        plan_name: "Dinner Plan",
-        plan_date: formattedDate,
-        meal_type: "dinner" as MealTypeEnum,
-        foods: [
-          { name: "Baked Salmon with Quinoa", calories: 550, prepTime: 30 },
-        ],
-        total_calories: 550,
-        prep_time: 30,
-      },
-      {
-        plan_name: "Snack Plan",
-        plan_date: formattedDate,
-        meal_type: "snack" as MealTypeEnum,
-        foods: [
-          { name: "Apple and Peanut Butter", calories: 200, prepTime: 5 },
-        ],
-        total_calories: 200,
-        prep_time: 5,
-      },
-    ];
-
     try {
       // Delete existing plans for the day before adding new ones
-      for (const plan of mealPlans) {
-        await supabase.from('meal_plans').delete().eq('id', plan.id);
+      const { error: deleteError } = await supabase
+        .from('meal_plans')
+        .delete()
+        .eq('plan_date', formattedDate);
+
+      if (deleteError) throw deleteError;
+
+      // Simulate generating a new meal plan, potentially prioritizing inventory
+      const availableInventoryNames = inventoryItems.map(item => item.name.toLowerCase());
+      const mealTypes: MealTypeEnum[] = ["breakfast", "lunch", "dinner", "snack"];
+      const newPlans = [];
+
+      for (const type of mealTypes) {
+        let potentialFoods = mockFoodDatabase.filter(food => food.mealType === type);
+
+        if (prioritizeInventory && availableInventoryNames.length > 0) {
+          // Simple prioritization: filter for foods that use at least one inventory item
+          const inventoryPrioritizedFoods = potentialFoods.filter(food =>
+            food.ingredients.some(ing => availableInventoryNames.includes(ing.toLowerCase()))
+          );
+          if (inventoryPrioritizedFoods.length > 0) {
+            potentialFoods = inventoryPrioritizedFoods;
+          }
+        }
+
+        const selectedFood = potentialFoods.length > 0
+          ? potentialFoods[Math.floor(Math.random() * potentialFoods.length)]
+          : null;
+
+        if (selectedFood) {
+          newPlans.push({
+            plan_name: selectedFood.title,
+            plan_date: formattedDate,
+            meal_type: type,
+            foods: [
+              {
+                name: selectedFood.title,
+                calories: selectedFood.calories,
+                protein: selectedFood.protein,
+                carbs: selectedFood.carbs,
+                fat: selectedFood.fat,
+                serving_size: "1 serving",
+                serving_quantity: 1,
+                prepTime: selectedFood.prepTime,
+              },
+            ],
+            total_calories: selectedFood.calories,
+            prep_time: selectedFood.prepTime,
+          });
+        }
       }
 
-      for (const planData of mockMealPlanData) {
+      for (const planData of newPlans) {
         await addMealPlan(planData);
       }
       toast.success("New meal plan generated and saved!");
@@ -140,11 +150,9 @@ const MealPlanner = () => {
 
   // Calculate daily summary from fetched meal plans
   const dailyTotalCalories = mealPlans.reduce((sum, plan) => sum + (plan.total_calories || 0), 0);
-  // Placeholder for protein, carbs, fat as they are not directly in meal_plans table
-  // In a real app, you'd sum these from the 'foods' JSON or a separate food_items table.
-  const dailyTotalProtein = 0; 
-  const dailyTotalCarbs = 0;
-  const dailyTotalFat = 0;
+  const dailyTotalProtein = mealPlans.reduce((sum, plan) => sum + (plan.foods as any[] || []).reduce((foodSum, food) => foodSum + (food.protein || 0), 0), 0);
+  const dailyTotalCarbs = mealPlans.reduce((sum, plan) => sum + (plan.foods as any[] || []).reduce((foodSum, food) => foodSum + (food.carbs || 0), 0), 0);
+  const dailyTotalFat = mealPlans.reduce((sum, plan) => sum + (plan.foods as any[] || []).reduce((foodSum, food) => foodSum + (food.fat || 0), 0), 0);
 
   return (
     <MainLayout>
@@ -156,21 +164,31 @@ const MealPlanner = () => {
               Plan and customize your meals for optimal nutrition
             </p>
           </div>
-          <Button 
-            className="mt-4 sm:mt-0" 
-            onClick={handleGenerateMealPlan}
-            disabled={isGeneratingPlan || isLoadingMealPlans}
-          >
-            {isGeneratingPlan ? (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Generating...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4" /> Generate New Plan
-              </>
-            )}
-          </Button>
+          <div className="mt-4 sm:mt-0 flex flex-wrap gap-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="prioritize-inventory"
+                checked={prioritizeInventory}
+                onCheckedChange={(checked: boolean) => setPrioritizeInventory(checked)}
+                disabled={isLoadingInventory || isGeneratingPlan}
+              />
+              <Label htmlFor="prioritize-inventory">Prioritize Inventory</Label>
+            </div>
+            <Button 
+              onClick={handleGenerateMealPlan}
+              disabled={isGeneratingPlan || isLoadingMealPlans || isLoadingInventory}
+            >
+              {isGeneratingPlan ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Generating...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" /> Generate New Plan
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
@@ -190,7 +208,7 @@ const MealPlanner = () => {
               />
               
               <div className="mt-4 space-y-4">
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" onClick={() => setIsGenerateRecipeDialogOpen(true)}>
                   <PlusCircle className="mr-2 h-4 w-4" /> Add Custom Meal
                 </Button>
                 
@@ -304,6 +322,14 @@ const MealPlanner = () => {
             </Tabs>
           </div>
         </div>
+
+        {/* Generate Recipe Dialog */}
+        <GenerateRecipeDialog
+          isOpen={isGenerateRecipeDialogOpen}
+          onOpenChange={setIsGenerateRecipeDialogOpen}
+          selectedDate={date}
+          onMealPlanUpdated={refetchMealPlans}
+        />
       </div>
     </MainLayout>
   );
