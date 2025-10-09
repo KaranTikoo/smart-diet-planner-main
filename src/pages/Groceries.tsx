@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useInventory } from "@/hooks/useInventory"; // Import useInventory
 
 interface GroceryItem {
   id: string;
@@ -29,6 +29,7 @@ interface GroceryItem {
 }
 
 const Groceries = () => {
+  const { addItem: addInventoryItem } = useInventory(); // Use addItem from useInventory
   const [items, setItems] = useState<GroceryItem[]>([
     { id: "1", name: "Chicken breast", category: "protein", checked: false },
     { id: "2", name: "Spinach", category: "vegetables", checked: false },
@@ -75,12 +76,37 @@ const Groceries = () => {
     }
   };
 
-  const handleToggleItem = (id: string) => {
+  const handleToggleItem = async (id: string) => {
+    const itemToToggle = items.find(item => item.id === id);
+    if (!itemToToggle) return;
+
+    const newCheckedState = !itemToToggle.checked;
+
     setItems(
       items.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item
+        item.id === id ? { ...item, checked: newCheckedState } : item
       )
     );
+
+    if (newCheckedState) {
+      // If item is checked, add it to inventory
+      try {
+        await addInventoryItem({
+          name: itemToToggle.name,
+          quantity: 1, // Default quantity
+          unit: "item", // Default unit
+          category: itemToToggle.category,
+          expiration_date: null, // No expiration date from grocery list
+        });
+        toast.success(`'${itemToToggle.name}' added to your inventory!`);
+      } catch (error) {
+        console.error("Failed to add item to inventory:", error);
+        toast.error(`Failed to add '${itemToToggle.name}' to inventory.`);
+      }
+    } else {
+      // If item is unchecked, it remains in inventory but is no longer 'bought' from grocery list perspective
+      toast.info(`'${itemToToggle.name}' marked as not yet bought.`);
+    }
   };
 
   const handleDeleteItem = (id: string) => {
