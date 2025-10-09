@@ -27,7 +27,7 @@ const MealDetailDialog = ({ isOpen, onClose, meal }: MealDetailDialogProps) => {
         <DialogHeader>
           <DialogTitle>{meal.plan_name}</DialogTitle>
           <DialogDescription>
-            Details for your {meal.meal_type} on {new Date(meal.plan_date).toLocaleDateString()}
+            {firstFoodItem?.description || `Details for your ${meal.meal_type} on ${new Date(meal.plan_date).toLocaleDateString()}`}
           </DialogDescription>
         </DialogHeader>
 
@@ -57,14 +57,12 @@ const MealDetailDialog = ({ isOpen, onClose, meal }: MealDetailDialogProps) => {
             </div>
           </div>
 
-          {foodItems.length > 0 && (
+          {firstFoodItem?.ingredients && firstFoodItem.ingredients.length > 0 && (
             <div>
-              <h4 className="font-medium mb-2">Items in this Meal</h4>
+              <h4 className="font-medium mb-2">Ingredients</h4>
               <ul className="list-disc pl-5 space-y-1">
-                {foodItems.map((item: any, index: number) => (
-                  <li key={index}>
-                    {item.name} ({item.calories} cal, {item.protein || 0}g P, {item.carbs || 0}g C, {item.fat || 0}g F)
-                  </li>
+                {firstFoodItem.ingredients.map((ingredient: string, index: number) => (
+                  <li key={index} className="capitalize">{ingredient}</li>
                 ))}
               </ul>
             </div>
