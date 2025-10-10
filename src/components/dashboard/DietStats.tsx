@@ -2,6 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { ActivityIcon, TrendingUp, Apple, Beef, Droplets, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { WaterIntake } from "@/lib/supabase"; // Import WaterIntake type
+import { parseISO, getHours } from "date-fns"; // Import date-fns utilities
 
 interface DietStatsProps {
   caloriesConsumed: number;
@@ -9,9 +11,10 @@ interface DietStatsProps {
   carbsPercentage: number;
   proteinPercentage: number;
   fatPercentage: number;
-  waterConsumed: number;
-  waterGoal: number;
-  onAddWater?: () => void; // New prop for adding water
+  waterConsumed: number; // Total water in oz
+  waterGoal: number; // Water goal in oz
+  waterEntries: WaterIntake[]; // New prop for detailed water entries
+  onAddWater?: () => void;
 }
 
 const DietStats = ({
@@ -22,10 +25,39 @@ const DietStats = ({
   fatPercentage,
   waterConsumed,
   waterGoal,
+  waterEntries, // Destructure new prop
   onAddWater
 }: DietStatsProps) => {
   const caloriesPercentage = caloriesGoal > 0 ? Math.min(100, Math.round((caloriesConsumed / caloriesGoal) * 100)) : 0;
   const waterPercentage = waterGoal > 0 ? Math.min(100, Math.round((waterConsumed / waterGoal) * 100)) : 0;
+
+  // Convert water goal to ml for consistent calculations (1 oz = 29.5735 ml)
+  const waterGoalMl = waterGoal * 29.5735;
+
+  // Define time slots for water visualization
+  const timeSlots = [
+    { label: "6am", startHour: 6, endHour: 9 },
+    { label: "9am", startHour: 9, endHour: 12 },
+    { label: "12pm", startHour: 12, endHour: 15 },
+    { label: "3pm", startHour: 15, endHour: 18 },
+    { label: "6pm", startHour: 18, endHour: 21 },
+    { label: "9pm", startHour: 21, endHour: 24 },
+  ];
+
+  // Calculate water intake for each time slot
+  const waterIntakeBySlot = timeSlots.map(slot => {
+    const totalMlInSlot = waterEntries
+      .filter(entry => {
+        const entryHour = getHours(parseISO(entry.created_at));
+        return entryHour >= slot.startHour && entryHour < slot.endHour;
+      })
+      .reduce((sum, entry) => sum + entry.amount_ml, 0);
+    
+    // Calculate fill height as a percentage of the daily goal
+    // If waterGoalMl is 0, prevent division by zero
+    const fillPercentage = waterGoalMl > 0 ? Math.min(100, (totalMlInSlot / waterGoalMl) * 100) : 0;
+    return { ...slot, fillPercentage };
+  });
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -93,42 +125,17 @@ const DietStats = ({
             <Progress value={waterPercentage} className="h-2 bg-muted" />
             
             <div className="flex justify-between mt-4 text-sm">
-              <div className="flex flex-col items-center">
-                <span className="text-muted-foreground">6am</span>
-                <div className="h-10 w-4 bg-info/20 rounded-full mt-1 relative">
-                  <div className="absolute bottom-0 w-full bg-info rounded-full" style={{ height: "40%" }}></div>
+              {waterIntakeBySlot.map((slot, index) => (
+                <div key={index} className="flex flex-col items-center">
+                  <span className="text-muted-foreground">{slot.label}</span>
+                  <div className="h-10 w-4 bg-info/20 rounded-full mt-1 relative">
+                    <div 
+                      className="absolute bottom-0 w-full bg-info rounded-full" 
+                      style={{ height: `${slot.fillPercentage}%` }}
+                    ></div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-muted-foreground">9am</span>
-                <div className="h-10 w-4 bg-info/20 rounded-full mt-1 relative">
-                  <div className="absolute bottom-0 w-full bg-info rounded-full" style={{ height: "60%" }}></div>
-                </div>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-muted-foreground">12pm</span>
-                <div className="h-10 w-4 bg-info/20 rounded-full mt-1 relative">
-                  <div className="absolute bottom-0 w-full bg-info rounded-full" style={{ height: "80%" }}></div>
-                </div>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-muted-foreground">3pm</span>
-                <div className="h-10 w-4 bg-info/20 rounded-full mt-1 relative">
-                  <div className="absolute bottom-0 w-full bg-info rounded-full" style={{ height: "50%" }}></div>
-                </div>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-muted-foreground">6pm</span>
-                <div className="h-10 w-4 bg-info/20 rounded-full mt-1 relative">
-                  <div className="absolute bottom-0 w-full bg-info rounded-full" style={{ height: "30%" }}></div>
-                </div>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-muted-foreground">9pm</span>
-                <div className="h-10 w-4 bg-info/20 rounded-full mt-1 relative">
-                  <div className="absolute bottom-0 w-full bg-info rounded-full" style={{ height: "10%" }}></div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </CardContent>

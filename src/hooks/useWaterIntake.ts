@@ -36,7 +36,7 @@ export const useWaterIntake = (date?: string) => {
     }
   }
 
-  const addEntry = async (amount_ml: number, entry_date: string) => {
+  const addEntry = async (amount_ml: number, entry_date: string, created_at_timestamp?: string) => {
     if (!user || !supabase) return
 
     try {
@@ -44,6 +44,7 @@ export const useWaterIntake = (date?: string) => {
         user_id: user.id,
         amount_ml,
         entry_date,
+        created_at: created_at_timestamp || new Date().toISOString(), // Use provided timestamp or default to now
       };
 
       const { data, error } = await supabase

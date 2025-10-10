@@ -12,7 +12,7 @@ import { useFoodEntries } from "@/hooks/useFoodEntries";
 import { useWaterIntake } from "@/hooks/useWaterIntake";
 import { useMealPlans } from "@/hooks/useMealPlans"; // Import useMealPlans
 import { useAuth } from "@/providers/AuthProvider"; // Corrected import path for useAuth
-import { format } from "date-fns";
+import { format } from "date-fns"; // Import format for date formatting
 import { MealTypeEnum, MealPlan as SupabaseMealPlan } from "@/lib/supabase"; // Import MealTypeEnum and SupabaseMealPlan
 
 // Helper to map Supabase MealPlan to what TodaysMealPlanProps expects
@@ -123,6 +123,7 @@ const Dashboard = () => {
     fatPercentage,
     waterConsumed: waterConsumedOz,
     waterGoal: waterGoalOz,
+    waterEntries: waterEntries, // Pass waterEntries here
   };
 
   // Prepare meals for TodaysMealPlan component

@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useWaterIntake } from "@/hooks/useWaterIntake";
+import { format } from "date-fns"; // Import format for date handling
 
 interface AddWaterEntryDialogProps {
   isOpen: boolean;
@@ -15,7 +16,8 @@ interface AddWaterEntryDialogProps {
 const AddWaterEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddWaterEntryDialogProps) => {
   const { addEntry } = useWaterIntake();
   const [amountMl, setAmountMl] = useState("");
-  const [entryDate, setEntryDate] = useState(new Date().toISOString().split('T')[0]);
+  const [entryDate, setEntryDate] = useState(format(new Date(), 'yyyy-MM-dd')); // Format to YYYY-MM-DD
+  const [entryTime, setEntryTime] = useState(format(new Date(), 'HH:mm')); // Format to HH:mm
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSaveWaterEntry = async () => {
@@ -26,10 +28,15 @@ const AddWaterEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddWaterEnt
 
     setIsLoading(true);
     try {
-      await addEntry(parseFloat(amountMl), entryDate);
+      // Combine date and time to create a full ISO timestamp
+      const dateTimeString = `${entryDate}T${entryTime}:00Z`; // Assuming UTC for simplicity, adjust if local time is needed
+      const createdAtTimestamp = new Date(dateTimeString).toISOString();
+
+      await addEntry(parseFloat(amountMl), entryDate, createdAtTimestamp);
       
       setAmountMl("");
-      setEntryDate(new Date().toISOString().split('T')[0]);
+      setEntryDate(format(new Date(), 'yyyy-MM-dd'));
+      setEntryTime(format(new Date(), 'HH:mm'));
       onOpenChange(false);
       if (onEntryAdded) {
         onEntryAdded();
@@ -77,6 +84,18 @@ const AddWaterEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddWaterEnt
               onChange={(e) => setEntryDate(e.target.value)}
               className="col-span-3"
               type="date"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="entry-time" className="text-right">
+              Time
+            </Label>
+            <Input
+              id="entry-time"
+              value={entryTime}
+              onChange={(e) => setEntryTime(e.target.value)}
+              className="col-span-3"
+              type="time"
             />
           </div>
         </div>
