@@ -33,13 +33,16 @@ const DietStats = ({
 
   const waterGoalMl = waterGoal * 29.5735; // Convert water goal from oz to ml
 
+  // Define 8 time slots covering the full 24 hours in 3-hour intervals
   const timeSlots = [
-    { label: "6am", startHour: 6, endHour: 9 },
-    { label: "9am", startHour: 9, endHour: 12 },
-    { label: "12pm", startHour: 12, endHour: 15 },
-    { label: "3pm", startHour: 15, endHour: 18 },
-    { label: "6pm", startHour: 18, endHour: 21 },
-    { label: "9pm", startHour: 21, endHour: 24 },
+    { label: "12-3am", startHour: 0, endHour: 3 },
+    { label: "3-6am", startHour: 3, endHour: 6 },
+    { label: "6-9am", startHour: 6, endHour: 9 },
+    { label: "9-12pm", startHour: 9, endHour: 12 },
+    { label: "12-3pm", startHour: 12, endHour: 15 },
+    { label: "3-6pm", startHour: 15, endHour: 18 },
+    { label: "6-9pm", startHour: 18, endHour: 21 },
+    { label: "9-12am", startHour: 21, endHour: 24 },
   ];
 
   const waterIntakeBySlot = timeSlots.map(slot => {
@@ -51,7 +54,7 @@ const DietStats = ({
       .reduce((sum, entry) => sum + entry.amount_ml, 0);
     
     const fillPercentage = waterGoalMl > 0 ? Math.min(100, (totalMlInSlot / waterGoalMl) * 100) : 0;
-    return { ...slot, totalMlInSlot, fillPercentage }; // Add totalMlInSlot to the slot object
+    return { ...slot, totalMlInSlot, fillPercentage };
   });
 
   return (
