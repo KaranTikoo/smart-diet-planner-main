@@ -107,9 +107,15 @@
     @apply border-border;
   }
 
-  html, body { /* Apply to both html and body */
+  html, body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Temporary debug style: If this works, Tailwind is processing the dark class */
+  html.dark body {
+    background-color: #333 !important; /* A very distinct dark gray */
+    color: #eee !important; /* A very distinct light gray */
   }
 }
 
