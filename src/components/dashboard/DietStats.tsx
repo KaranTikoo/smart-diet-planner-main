@@ -2,8 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { ActivityIcon, TrendingUp, Apple, Beef, Droplets, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { WaterIntake } from "@/lib/supabase"; // Import WaterIntake type
-import { parseISO, getHours } from "date-fns"; // Import date-fns utilities
+import { WaterIntake } from "@/lib/supabase";
+import { parseISO, getHours } from "date-fns";
 
 interface DietStatsProps {
   caloriesConsumed: number;
@@ -13,7 +13,7 @@ interface DietStatsProps {
   fatPercentage: number;
   waterConsumed: number; // Total water in oz
   waterGoal: number; // Water goal in oz
-  waterEntries: WaterIntake[]; // New prop for detailed water entries
+  waterEntries: WaterIntake[];
   onAddWater?: () => void;
 }
 
@@ -25,16 +25,14 @@ const DietStats = ({
   fatPercentage,
   waterConsumed,
   waterGoal,
-  waterEntries, // Destructure new prop
+  waterEntries,
   onAddWater
 }: DietStatsProps) => {
   const caloriesPercentage = caloriesGoal > 0 ? Math.min(100, Math.round((caloriesConsumed / caloriesGoal) * 100)) : 0;
   const waterPercentage = waterGoal > 0 ? Math.min(100, Math.round((waterConsumed / waterGoal) * 100)) : 0;
 
-  // Convert water goal to ml for consistent calculations (1 oz = 29.5735 ml)
-  const waterGoalMl = waterGoal * 29.5735;
+  const waterGoalMl = waterGoal * 29.5735; // Convert water goal from oz to ml
 
-  // Define time slots for water visualization
   const timeSlots = [
     { label: "6am", startHour: 6, endHour: 9 },
     { label: "9am", startHour: 9, endHour: 12 },
@@ -44,7 +42,6 @@ const DietStats = ({
     { label: "9pm", startHour: 21, endHour: 24 },
   ];
 
-  // Calculate water intake for each time slot
   const waterIntakeBySlot = timeSlots.map(slot => {
     const totalMlInSlot = waterEntries
       .filter(entry => {
@@ -53,10 +50,8 @@ const DietStats = ({
       })
       .reduce((sum, entry) => sum + entry.amount_ml, 0);
     
-    // Calculate fill height as a percentage of the daily goal
-    // If waterGoalMl is 0, prevent division by zero
     const fillPercentage = waterGoalMl > 0 ? Math.min(100, (totalMlInSlot / waterGoalMl) * 100) : 0;
-    return { ...slot, fillPercentage };
+    return { ...slot, totalMlInSlot, fillPercentage }; // Add totalMlInSlot to the slot object
   });
 
   return (
@@ -127,12 +122,19 @@ const DietStats = ({
             <div className="flex justify-between mt-4 text-sm">
               {waterIntakeBySlot.map((slot, index) => (
                 <div key={index} className="flex flex-col items-center">
-                  <span className="text-muted-foreground">{slot.label}</span>
-                  <div className="h-10 w-4 bg-info/20 rounded-full mt-1 relative">
+                  <span className="text-muted-foreground text-xs mb-1">{slot.label}</span>
+                  <div className="relative h-20 w-8 bg-info/10 rounded-b-lg overflow-hidden border border-info/30">
+                    {/* Water fill level */}
                     <div 
-                      className="absolute bottom-0 w-full bg-info rounded-full" 
+                      className="absolute bottom-0 w-full bg-info transition-all duration-500 ease-out" 
                       style={{ height: `${slot.fillPercentage}%` }}
                     ></div>
+                    {/* Text overlay for amount */}
+                    {slot.totalMlInSlot > 0 && (
+                      <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-xs font-semibold drop-shadow-sm z-10">
+                        {Math.round(slot.totalMlInSlot)}ml
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
