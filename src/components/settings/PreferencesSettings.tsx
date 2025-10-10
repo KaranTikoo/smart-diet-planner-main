@@ -17,7 +17,9 @@ const PreferencesSettings = ({ isGuest, profileLoading }: PreferencesSettingsPro
 
   useEffect(() => {
     setIsDarkTheme(theme === "dark");
-  }, [theme]);
+    console.log("Current theme from useTheme:", theme); // Debug log
+    console.log("isDarkTheme state:", isDarkTheme); // Debug log
+  }, [theme]); // Depend on theme to log changes
 
   const handleThemeChange = (checked: boolean) => {
     if (isGuest) {
@@ -25,7 +27,7 @@ const PreferencesSettings = ({ isGuest, profileLoading }: PreferencesSettingsPro
       return;
     }
     setTheme(checked ? "dark" : "light");
-    setIsDarkTheme(checked);
+    // setIsDarkTheme is updated by the useEffect, no need to set here
     toast.success("Theme preference updated!");
   };
 
