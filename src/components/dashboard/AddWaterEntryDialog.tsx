@@ -28,9 +28,10 @@ const AddWaterEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddWaterEnt
 
     setIsLoading(true);
     try {
-      // Combine date and time to create a full ISO timestamp
-      const dateTimeString = `${entryDate}T${entryTime}:00Z`; // Assuming UTC for simplicity, adjust if local time is needed
-      const createdAtTimestamp = new Date(dateTimeString).toISOString();
+      // Combine date and time to create a local Date object, then convert to ISO string.
+      // This ensures the stored timestamp correctly reflects the user's local input time.
+      const localDateTime = new Date(`${entryDate}T${entryTime}`);
+      const createdAtTimestamp = localDateTime.toISOString();
 
       await addEntry(parseFloat(amountMl), entryDate, createdAtTimestamp);
       
@@ -81,7 +82,7 @@ const AddWaterEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddWaterEnt
             <Input
               id="entry-date"
               value={entryDate}
-              onChange={(e) => setEntryDate(e.target.value)}
+              onChange={(e) => setNewEntry({...newEntry, date: e.target.value})}
               className="col-span-3"
               type="date"
             />
