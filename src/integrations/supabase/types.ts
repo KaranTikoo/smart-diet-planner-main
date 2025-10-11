@@ -24,6 +24,7 @@ export type Database = {
           daily_calorie_goal: number | null
           created_at: string
           updated_at: string
+          water_goal_ml: number | null
         }
         Insert: {
           id?: string
@@ -39,6 +40,7 @@ export type Database = {
           daily_calorie_goal?: number | null
           created_at?: string
           updated_at?: string
+          water_goal_ml?: number | null
         }
         Update: {
           id?: string
@@ -54,6 +56,7 @@ export type Database = {
           daily_calorie_goal?: number | null
           created_at?: string
           updated_at?: string
+          water_goal_ml?: number | null
         }
       }
       food_entries: {
@@ -215,6 +218,53 @@ export type Database = {
           unit?: string | null
           category?: string | null
           expiration_date?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      custom_foods: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          calories: number
+          protein: number | null
+          carbs: number | null
+          fat: number | null
+          fiber: number | null
+          sugar: number | null
+          sodium: number | null
+          serving_size: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          calories: number
+          protein?: number | null
+          carbs?: number | null
+          fat?: number | null
+          fiber?: number | null
+          sugar?: number | null
+          sodium?: number | null
+          serving_size?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          calories?: number
+          protein?: number | null
+          carbs?: number | null
+          fat?: number | null
+          fiber?: number | null
+          sugar?: number | null
+          sodium?: number | null
+          serving_size?: string | null
           created_at?: string
           updated_at?: string
         }
