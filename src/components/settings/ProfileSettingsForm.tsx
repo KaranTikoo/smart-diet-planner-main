@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,6 +43,56 @@ const ProfileSettingsForm = ({
     budget: "medium",
   });
 
+  // Function to calculate daily calorie goal
+  const calculateDailyCalorieGoal = useCallback(() => {
+    const { age, gender, height, current_weight, activity_level, goal_type } = localProfile;
+
+    if (!age || !gender || !height || !current_weight || !activity_level || !goal_type) {
+      return null; // Cannot calculate if essential data is missing
+    }
+
+    let bmr: number; // Basal Metabolic Rate
+    // Mifflin-St Jeor Equation
+    if (gender === 'male') {
+      bmr = (10 * current_weight) + (6.25 * height) - (5 * age) + 5;
+    } else { // female or other, using female equation as a default for 'other'
+      bmr = (10 * current_weight) + (6.25 * height) - (5 * age) - 161;
+    }
+
+    let activityFactor: number;
+    switch (activity_level) {
+      case 'sedentary':
+        activityFactor = 1.2;
+        break;
+      case 'lightly_active':
+        activityFactor = 1.375;
+        break;
+      case 'moderately_active':
+        activityFactor = 1.55;
+        break;
+      case 'very_active':
+        activityFactor = 1.725;
+        break;
+      case 'extremely_active':
+        activityFactor = 1.9;
+        break;
+      default:
+        activityFactor = 1.2; // Default to sedentary if not set
+    }
+
+    let tdee = bmr * activityFactor; // Total Daily Energy Expenditure
+
+    // Adjust for goal type
+    if (goal_type === 'lose_weight') {
+      tdee -= 500; // Moderate deficit for weight loss
+    } else if (goal_type === 'gain_weight') {
+      tdee += 500; // Moderate surplus for weight gain
+    }
+    // For 'maintain_weight', tdee is used directly
+
+    return Math.round(tdee);
+  }, [localProfile.age, localProfile.gender, localProfile.height, localProfile.current_weight, localProfile.activity_level, localProfile.goal_type]);
+
   useEffect(() => {
     if (profileData) {
       setLocalProfile({
@@ -54,12 +104,18 @@ const ProfileSettingsForm = ({
         goal_type: profileData.goal_type,
         goal_weight: profileData.goal_weight,
         activity_level: profileData.activity_level,
-        daily_calorie_goal: profileData.daily_calorie_goal, // Initialize daily_calorie_goal
+        daily_calorie_goal: profileData.daily_calorie_goal,
       });
-      // If dietary preferences were stored in Supabase, load them here.
-      // For now, they remain local to this component.
     }
   }, [profileData]);
+
+  useEffect(() => {
+    const calculatedGoal = calculateDailyCalorieGoal();
+    if (calculatedGoal !== null && calculatedGoal !== localProfile.daily_calorie_goal) {
+      setLocalProfile((prev) => ({ ...prev, daily_calorie_goal: calculatedGoal }));
+    }
+  }, [calculateDailyCalorieGoal, localProfile.daily_calorie_goal]);
+
 
   const handleProfileChange = (field: keyof Profile, value: any) => {
     setLocalProfile((prev) => ({ ...prev, [field]: value }));
@@ -248,11 +304,8 @@ const ProfileSettingsForm = ({
                 id="dailyCalorieGoal"
                 type="number"
                 value={localProfile.daily_calorie_goal || ""}
-                onChange={(e) => handleProfileChange("daily_calorie_goal", parseInt(e.target.value) || null)}
-                placeholder="e.g., 2000"
-                min="500"
-                max="5000"
-                disabled={isGuest}
+                placeholder="Calculated automatically"
+                disabled // This field is now disabled and auto-calculated
               />
             </div>
           </div>
