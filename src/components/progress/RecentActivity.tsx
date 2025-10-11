@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarRange } from "lucide-react";
+import { useState } from "react"; // Import useState
 
 interface RecentActivityProps {
   entries: Array<{
@@ -14,8 +15,13 @@ interface RecentActivityProps {
 }
 
 const RecentActivity = ({ entries }: RecentActivityProps) => {
+  const [showAllEntries, setShowAllEntries] = useState(false); // New state to toggle all entries
+  
   // Filter out entries that are completely zero (no calories and no weight)
   const meaningfulEntries = entries.filter(entry => entry.calories > 0 || entry.weight > 0);
+
+  // Determine which entries to display based on showAllEntries state
+  const entriesToDisplay = showAllEntries ? meaningfulEntries : meaningfulEntries.slice(0, 5);
 
   return (
     <Card className="lg:col-span-2">
@@ -34,7 +40,7 @@ const RecentActivity = ({ entries }: RecentActivityProps) => {
               No recent entries. Add your first entry!
             </div>
           ) : (
-            meaningfulEntries.slice(0, 5).map((entry, index) => (
+            entriesToDisplay.map((entry, index) => (
               <div key={index} className="flex justify-between border-b pb-3 last:border-0">
                 <div>
                   <p className="font-medium">{entry.day}</p>
@@ -54,10 +60,10 @@ const RecentActivity = ({ entries }: RecentActivityProps) => {
           )}
         </div>
         
-        {meaningfulEntries.length > 0 && (
+        {meaningfulEntries.length > 5 && ( // Only show button if there are more than 5 entries
           <div className="mt-4">
-            <Button variant="outline" className="w-full">
-              View All Entries
+            <Button variant="outline" className="w-full" onClick={() => setShowAllEntries(!showAllEntries)}>
+              {showAllEntries ? "Show Less" : "View All Entries"}
             </Button>
           </div>
         )}
