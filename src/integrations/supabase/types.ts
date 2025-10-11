@@ -293,6 +293,61 @@ export type Database = {
           updated_at?: string
         }
       }
+      grocery_lists: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      grocery_items: {
+        Row: {
+          id: string
+          grocery_list_id: string
+          name: string
+          category: string | null
+          quantity: number | null
+          unit: string | null
+          is_checked: boolean | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          grocery_list_id: string
+          name: string
+          category?: string | null
+          quantity?: number | null
+          unit?: string | null
+          is_checked?: boolean | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          grocery_list_id?: string
+          name?: string
+          category?: string | null
+          quantity?: number | null
+          unit?: string | null
+          is_checked?: boolean | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

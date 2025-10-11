@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,54 +6,58 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ShoppingBasket, 
-  Plus, 
-  RefreshCw, 
-  Printer, 
-  Share2, 
-  Mail, 
+import {
+  ShoppingBasket,
+  Plus,
+  RefreshCw,
+  Printer,
+  Share2,
+  Mail,
   Trash2,
   ArrowRight,
   Check,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useInventory } from "@/hooks/useInventory"; // Import useInventory
-
-interface GroceryItem {
-  id: string;
-  name: string;
-  category: string;
-  checked: boolean;
-}
+import { useInventory } from "@/hooks/useInventory";
+import { useGroceryLists } from "@/hooks/useGroceryLists"; // Import useGroceryLists hook
+import { GroceryItem as SupabaseGroceryItem } from "@/lib/supabase"; // Import Supabase GroceryItem type
+import { mockFoodDatabase } from "@/data/mockFoodDatabase"; // For generating items from meal plan
 
 const Groceries = () => {
-  const { addItem: addInventoryItem } = useInventory(); // Use addItem from useInventory
-  const [items, setItems] = useState<GroceryItem[]>([
-    { id: "1", name: "Chicken breast", category: "protein", checked: false },
-    { id: "2", name: "Spinach", category: "vegetables", checked: false },
-    { id: "3", name: "Greek yogurt", category: "dairy", checked: false },
-    { id: "4", name: "Brown rice", category: "grains", checked: false },
-    { id: "5", name: "Apples", category: "fruits", checked: false },
-    { id: "6", name: "Quinoa", category: "grains", checked: false },
-    { id: "7", name: "Salmon fillets", category: "protein", checked: false },
-    { id: "8", name: "Broccoli", category: "vegetables", checked: false },
-    { id: "9", name: "Avocados", category: "fruits", checked: false },
-    { id: "10", name: "Almond milk", category: "dairy", checked: false },
-    { id: "11", name: "Sweet potatoes", category: "vegetables", checked: false },
-    { id: "12", name: "Eggs", category: "protein", checked: false },
-  ]);
-  
+  const { addItem: addInventoryItem } = useInventory();
+  const {
+    groceryLists,
+    selectedListId,
+    setSelectedListId,
+    items,
+    loading,
+    error,
+    fetchGroceryLists,
+    fetchGroceryItems,
+    addGroceryList,
+    addGroceryItem,
+    updateGroceryItem,
+    deleteGroceryItem,
+    clearCompletedItems,
+  } = useGroceryLists();
+
   const [newItemInput, setNewItemInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemText, setEditingItemText] = useState("");
 
   const categories = ["protein", "fruits", "vegetables", "grains", "dairy", "other"];
-  
-  const groupedItems = items.reduce((groups: Record<string, GroceryItem[]>, item) => {
-    const category = item.category;
+
+  // Ensure a default list exists if none are present for the user
+  useEffect(() => {
+    if (!loading && groceryLists.length === 0 && !selectedListId) {
+      addGroceryList("My Grocery List");
+    }
+  }, [loading, groceryLists, selectedListId, addGroceryList]);
+
+  const groupedItems = items.reduce((groups: Record<string, SupabaseGroceryItem[]>, item) => {
+    const category = item.category || "other";
     if (!groups[category]) {
       groups[category] = [];
     }
@@ -61,63 +65,83 @@ const Groceries = () => {
     return groups;
   }, {});
 
-  const handleAddItem = (e: React.FormEvent) => {
+  const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newItemInput.trim()) {
-      const newItem = {
-        id: Date.now().toString(),
+    if (newItemInput.trim() && selectedListId) {
+      await addGroceryItem({
         name: newItemInput.trim(),
-        category: "other",
-        checked: false,
-      };
-      setItems([...items, newItem]);
-      setNewItemInput("");
-      toast.success("Item added to grocery list");
-    }
-  };
-
-  const handleToggleItem = async (id: string) => {
-    const itemToToggle = items.find(item => item.id === id);
-    if (!itemToToggle) return;
-
-    // Optimistically remove from list
-    setItems(prevItems => prevItems.filter(item => item.id !== id));
-
-    // Add to inventory
-    try {
-      await addInventoryItem({
-        name: itemToToggle.name,
+        category: "other", // Default category
         quantity: 1, // Default quantity
         unit: "item", // Default unit
-        category: itemToToggle.category,
-        expiration_date: null, // No expiration date from grocery list
+        is_checked: false,
       });
-      toast.success(`'${itemToToggle.name}' bought and added to your inventory!`);
-    } catch (error) {
-      console.error("Failed to add item to inventory:", error);
-      toast.error(`Failed to add '${itemToToggle.name}' to inventory.`);
-      // If adding to inventory fails, you might want to add it back to the grocery list
-      setItems(prevItems => [...prevItems, itemToToggle]);
+      setNewItemInput("");
+    } else if (!selectedListId) {
+      toast.error("No grocery list selected. Please create one first.");
     }
   };
 
-  const handleDeleteItem = (id: string) => {
-    setItems(items.filter((item) => item.id !== id));
-    toast.success("Item removed from grocery list");
+  const handleQuickAddItem = async (itemName: string, itemCategory: string) => {
+    if (selectedListId) {
+      const existingItem = items.find((i) => i.name.toLowerCase() === itemName.toLowerCase());
+      if (existingItem) {
+        toast.info(`${itemName} is already on your list`);
+      } else {
+        await addGroceryItem({
+          name: itemName,
+          category: itemCategory,
+          quantity: 1,
+          unit: "item",
+          is_checked: false,
+        });
+      }
+    } else {
+      toast.error("No grocery list selected. Please create one first.");
+    }
   };
 
-  const handleEditStart = (item: GroceryItem) => {
+  const handleToggleItem = async (item: SupabaseGroceryItem) => {
+    if (!selectedListId) return;
+
+    // Optimistically update UI
+    setItems(prevItems => prevItems.map(i => i.id === item.id ? { ...i, is_checked: !i.is_checked } : i));
+
+    try {
+      await updateGroceryItem(item.id, { is_checked: !item.is_checked });
+
+      // If item is checked, add to inventory
+      if (!item.is_checked) { // If it was unchecked and now checked
+        await addInventoryItem({
+          name: item.name,
+          quantity: item.quantity || 1,
+          unit: item.unit || "item",
+          category: item.category || "other",
+          expiration_date: null,
+        });
+        toast.success(`'${item.name}' bought and added to your inventory!`);
+      }
+    } catch (error) {
+      console.error("Failed to update item or add to inventory:", error);
+      toast.error(`Failed to process '${item.name}'. Please try again.`);
+      // Revert optimistic update if API call fails
+      setItems(prevItems => prevItems.map(i => i.id === item.id ? { ...i, is_checked: item.is_checked } : i));
+    }
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this item?")) {
+      await deleteGroceryItem(id);
+    }
+  };
+
+  const handleEditStart = (item: SupabaseGroceryItem) => {
     setEditingItemId(item.id);
     setEditingItemText(item.name);
   };
 
-  const handleEditSave = () => {
+  const handleEditSave = async () => {
     if (editingItemId && editingItemText.trim()) {
-      setItems(
-        items.map((item) =>
-          item.id === editingItemId ? { ...item, name: editingItemText.trim() } : item
-        )
-      );
+      await updateGroceryItem(editingItemId, { name: editingItemText.trim() });
       setEditingItemId(null);
       setEditingItemText("");
     }
@@ -136,41 +160,48 @@ const Groceries = () => {
     }
   };
 
-  const handleCategoryChange = (id: string, category: string) => {
-    setItems(
-      items.map((item) =>
-        item.id === id ? { ...item, category } : item
-      )
-    );
+  const handleCategoryChange = async (id: string, category: string) => {
+    await updateGroceryItem(id, { category });
   };
 
-  const handleClearCompleted = () => {
-    const completedItems = items.filter((item) => item.checked);
-    if (completedItems.length === 0) {
-      toast.info("No completed items to clear");
+  const handleClearCompleted = async () => {
+    await clearCompletedItems();
+  };
+
+  const handleGenerateList = async () => {
+    setIsGenerating(true);
+    if (!selectedListId) {
+      toast.error("No grocery list selected. Please create one first.");
+      setIsGenerating(false);
       return;
     }
-    
-    setItems(items.filter((item) => !item.checked));
-    toast.success(`Removed ${completedItems.length} completed items`);
-  };
 
-  const handleGenerateList = () => {
-    setIsGenerating(true);
-    
-    // Simulate generating a new grocery list
-    setTimeout(() => {
-      const newItems = [
-        { id: "13", name: "Ground turkey", category: "protein", checked: false },
-        { id: "14", name: "Bell peppers", category: "vegetables", checked: false },
-        { id: "15", name: "Bananas", category: "fruits", checked: false },
-        { id: "16", name: "Oats", category: "grains", checked: false },
-        { id: "17", name: "Cottage cheese", category: "dairy", checked: false },
+    // Simulate generating a new grocery list from meal plan
+    setTimeout(async () => {
+      const newItemsToAdd = [
+        { name: "Ground turkey", category: "protein", quantity: 1, unit: "pack" },
+        { name: "Bell peppers", category: "vegetables", quantity: 3, unit: "item" },
+        { name: "Bananas", category: "fruits", quantity: 1, unit: "bunch" },
+        { name: "Oats", category: "grains", quantity: 1, unit: "box" },
+        { name: "Cottage cheese", category: "dairy", quantity: 1, unit: "container" },
       ];
-      
-      setItems([...items.filter((item) => item.checked), ...newItems]);
+
+      for (const item of newItemsToAdd) {
+        const existingItem = items.find((i) => i.name.toLowerCase() === item.name.toLowerCase());
+        if (!existingItem) {
+          await addGroceryItem({
+            grocery_list_id: selectedListId,
+            name: item.name,
+            category: item.category,
+            quantity: item.quantity,
+            unit: item.unit,
+            is_checked: false,
+          });
+        }
+      }
       setIsGenerating(false);
       toast.success("New grocery list generated based on your meal plan");
+      fetchGroceryItems(selectedListId); // Refetch to ensure all new items are displayed
     }, 1500);
   };
 
@@ -187,6 +218,14 @@ const Groceries = () => {
     toast.info("Email functionality coming soon");
   };
 
+  if (loading && groceryLists.length === 0 && !selectedListId) {
+    return (
+      <MainLayout>
+        <div className="text-center py-12 text-muted-foreground">Loading grocery lists...</div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -198,11 +237,11 @@ const Groceries = () => {
             </p>
           </div>
           <div className="mt-4 sm:mt-0 flex flex-wrap gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={handleGenerateList}
-              disabled={isGenerating}
+              disabled={isGenerating || !selectedListId}
             >
               {isGenerating ? (
                 <>
@@ -238,12 +277,13 @@ const Groceries = () => {
                     value={newItemInput}
                     onChange={(e) => setNewItemInput(e.target.value)}
                     placeholder="Add a new item..."
+                    disabled={!selectedListId}
                   />
-                  <Button type="submit" size="icon">
+                  <Button type="submit" size="icon" disabled={!selectedListId}>
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
-                
+
                 <div className="pt-4 space-y-3">
                   <h3 className="font-medium">Quick Add Common Items</h3>
                   <div className="grid grid-cols-2 gap-2">
@@ -254,36 +294,28 @@ const Groceries = () => {
                         size="sm"
                         className="justify-start"
                         onClick={() => {
-                          if (!items.some((i) => i.name.toLowerCase() === item.toLowerCase())) {
-                            const newItem = {
-                              id: Date.now().toString(),
-                              name: item,
-                              category: item === "Eggs" || item === "Chicken" ? "protein" 
+                          const category = item === "Eggs" || item === "Chicken" ? "protein"
                                       : item === "Milk" ? "dairy"
                                       : item === "Bread" || item === "Rice" ? "grains"
                                       : item === "Apples" || item === "Bananas" ? "fruits"
-                                      : "vegetables",
-                              checked: false,
-                            };
-                            setItems([...items, newItem]);
-                            toast.success(`Added ${item} to grocery list`);
-                          } else {
-                            toast.info(`${item} is already on your list`);
-                          }
+                                      : "vegetables";
+                          handleQuickAddItem(item, category);
                         }}
+                        disabled={!selectedListId}
                       >
                         <Plus className="mr-2 h-3 w-3" /> {item}
                       </Button>
                     ))}
                   </div>
                 </div>
-                
+
                 <div className="pt-2">
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
+                  <Button
+                    type="button"
+                    variant="ghost"
                     className="w-full text-muted-foreground"
                     onClick={handleEmailList}
+                    disabled={!selectedListId}
                   >
                     <Mail className="mr-2 h-4 w-4" /> Email me this list
                   </Button>
@@ -298,26 +330,29 @@ const Groceries = () => {
               <CardTitle className="text-lg flex items-center gap-2">
                 <ShoppingBasket className="h-5 w-5" /> Your Grocery List
               </CardTitle>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="h-8 text-muted-foreground"
                 onClick={handleClearCompleted}
+                disabled={!selectedListId || items.filter(item => item.is_checked).length === 0}
               >
                 <Trash2 className="mr-2 h-4 w-4" /> Clear Completed
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {Object.keys(groupedItems).length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">Your grocery list is empty</p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Add items or generate a list from your meal plan
-                    </p>
-                  </div>
-                ) : (
-                  Object.entries(groupedItems)
+              {loading && items.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">Loading items...</div>
+              ) : items.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Your grocery list is empty</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Add items or generate a list from your meal plan
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {Object.entries(groupedItems)
                     .sort(([a], [b]) => {
                       const categoryOrder = categories;
                       return categoryOrder.indexOf(a) - categoryOrder.indexOf(b);
@@ -335,14 +370,14 @@ const Groceries = () => {
                             <div
                               key={item.id}
                               className={`flex items-center justify-between p-2 rounded-md ${
-                                item.checked ? "bg-muted/50" : "bg-card"
+                                item.is_checked ? "bg-muted/50" : "bg-card"
                               }`}
                             >
                               <div className="flex items-center space-x-2">
                                 <Checkbox
                                   id={`item-${item.id}`}
-                                  checked={item.checked}
-                                  onCheckedChange={() => handleToggleItem(item.id)}
+                                  checked={item.is_checked || false}
+                                  onCheckedChange={() => handleToggleItem(item)}
                                 />
                                 {editingItemId === item.id ? (
                                   <div className="flex items-center space-x-2">
@@ -376,7 +411,7 @@ const Groceries = () => {
                                   <Label
                                     htmlFor={`item-${item.id}`}
                                     className={`${
-                                      item.checked ? "line-through text-muted-foreground" : ""
+                                      item.is_checked ? "line-through text-muted-foreground" : ""
                                     }`}
                                   >
                                     {item.name}
@@ -386,7 +421,7 @@ const Groceries = () => {
                               {editingItemId !== item.id && (
                                 <div className="flex items-center space-x-1">
                                   <select
-                                    value={item.category}
+                                    value={item.category || "other"}
                                     onChange={(e) => handleCategoryChange(item.id, e.target.value)}
                                     className="h-8 px-2 text-xs rounded border border-input bg-background"
                                   >
@@ -422,13 +457,13 @@ const Groceries = () => {
                       </div>
                     ))
                 )}
-                
+
                 <div className="pt-4 flex justify-between text-sm text-muted-foreground">
                   <span>
-                    {items.filter((item) => !item.checked).length} items remaining
+                    {items.filter((item) => !item.is_checked).length} items remaining
                   </span>
                   <span>
-                    {items.filter((item) => item.checked).length} completed
+                    {items.filter((item) => item.is_checked).length} completed
                   </span>
                 </div>
               </div>
