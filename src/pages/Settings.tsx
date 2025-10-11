@@ -46,7 +46,7 @@ const Settings = () => {
               profileData={profile}
               profileLoading={profileLoading}
               saveProfile={saveProfile}
-              isSaving={isSaving} {/* Pass isSaving prop */}
+              isSaving={isSaving} /* Pass isSaving prop */
             />
           </TabsContent>
           
