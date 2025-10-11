@@ -9,20 +9,13 @@ export type FoodEntry = Tables<'food_entries'>
 export type WeightEntry = Tables<'weight_entries'>
 export type MealPlan = Tables<'meal_plans'>
 export type WaterIntake = Tables<'water_intake'>
-export type InventoryItem = Tables<'inventory_items'>
-export type CustomFood = Tables<'custom_foods'>
-export type GroceryList = Tables<'grocery_lists'> // New export
-export type GroceryItem = Tables<'grocery_items'> // New export
+export type InventoryItem = Tables<'inventory_items'> // New type export
 
 // Export enums for convenience
 export type GenderEnum = Enums<'gender_enum'>
 export type ActivityLevelEnum = Enums<'activity_level_enum'>
 export type GoalTypeEnum = Enums<'goal_type_enum'>
 export type MealTypeEnum = Enums<'meal_type_enum'>
-export type DietTypeEnum = Enums<'diet_type_enum'>
-export type PrepTimeEnum = Enums<'prep_time_enum'>
-export type CookingSkillEnum = Enums<'cooking_skill_enum'>
-export type BudgetEnum = Enums<'budget_enum'>
 
 // Also export the full Database type if needed
 export type AppDatabase = Database

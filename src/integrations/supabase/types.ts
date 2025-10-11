@@ -24,15 +24,6 @@ export type Database = {
           daily_calorie_goal: number | null
           created_at: string
           updated_at: string
-          water_goal_ml: number | null
-          diet_type: Database['public']['Enums']['diet_type_enum'] | null
-          allergies: string[] | null
-          avoid_foods: string | null
-          meals_per_day: number | null
-          snacks_per_day: number | null
-          preparation_time_preference: Database['public']['Enums']['prep_time_enum'] | null
-          cooking_skill_level: Database['public']['Enums']['cooking_skill_enum'] | null
-          budget_preference: Database['public']['Enums']['budget_enum'] | null
         }
         Insert: {
           id?: string
@@ -48,15 +39,6 @@ export type Database = {
           daily_calorie_goal?: number | null
           created_at?: string
           updated_at?: string
-          water_goal_ml?: number | null
-          diet_type?: Database['public']['Enums']['diet_type_enum'] | null
-          allergies?: string[] | null
-          avoid_foods?: string | null
-          meals_per_day?: number | null
-          snacks_per_day?: number | null
-          preparation_time_preference?: Database['public']['Enums']['prep_time_enum'] | null
-          cooking_skill_level?: Database['public']['Enums']['cooking_skill_enum'] | null
-          budget_preference?: Database['public']['Enums']['budget_enum'] | null
         }
         Update: {
           id?: string
@@ -72,15 +54,6 @@ export type Database = {
           daily_calorie_goal?: number | null
           created_at?: string
           updated_at?: string
-          water_goal_ml?: number | null
-          diet_type?: Database['public']['Enums']['diet_type_enum'] | null
-          allergies?: string[] | null
-          avoid_foods?: string | null
-          meals_per_day?: number | null
-          snacks_per_day?: number | null
-          preparation_time_preference?: Database['public']['Enums']['prep_time_enum'] | null
-          cooking_skill_level?: Database['public']['Enums']['cooking_skill_enum'] | null
-          budget_preference?: Database['public']['Enums']['budget_enum'] | null
         }
       }
       food_entries: {
@@ -157,7 +130,7 @@ export type Database = {
           plan_name: string
           plan_date: string
           meal_type: Database['public']['Enums']['meal_type_enum']
-          foods: Json | null
+          foods: Json | null // Added foods column
           total_calories: number | null
           prep_time: number | null
           created_at: string
@@ -169,7 +142,7 @@ export type Database = {
           plan_name: string
           plan_date: string
           meal_type: Database['public']['Enums']['meal_type_enum']
-          foods?: Json | null
+          foods?: Json | null // Added foods column
           total_calories?: number | null
           prep_time?: number | null
           created_at?: string
@@ -181,7 +154,7 @@ export type Database = {
           plan_name?: string
           plan_date?: string
           meal_type?: Database['public']['Enums']['meal_type_enum']
-          foods?: Json | null
+          foods?: Json | null // Added foods column
           total_calories?: number | null
           prep_time?: number | null
           created_at?: string
@@ -246,108 +219,6 @@ export type Database = {
           updated_at?: string
         }
       }
-      custom_foods: {
-        Row: {
-          id: string
-          user_id: string
-          name: string
-          calories: number
-          protein: number | null
-          carbs: number | null
-          fat: number | null
-          fiber: number | null
-          sugar: number | null
-          sodium: number | null
-          serving_size: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          name: string
-          calories: number
-          protein?: number | null
-          carbs?: number | null
-          fat?: number | null
-          fiber?: number | null
-          sugar?: number | null
-          sodium?: number | null
-          serving_size?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          name?: string
-          calories?: number
-          protein?: number | null
-          carbs?: number | null
-          fat?: number | null
-          fiber?: number | null
-          sugar?: number | null
-          sodium?: number | null
-          serving_size?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      grocery_lists: {
-        Row: {
-          id: string
-          user_id: string
-          name: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          name?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          name?: string
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      grocery_items: {
-        Row: {
-          id: string
-          grocery_list_id: string
-          name: string
-          category: string | null
-          quantity: number | null
-          unit: string | null
-          is_checked: boolean | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          grocery_list_id: string
-          name: string
-          category?: string | null
-          quantity?: number | null
-          unit?: string | null
-          is_checked?: boolean | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          grocery_list_id?: string
-          name?: string
-          category?: string | null
-          quantity?: number | null
-          unit?: string | null
-          is_checked?: boolean | null
-          created_at?: string
-        }
-      }
     }
     Views: {
       [_ in never]: never
@@ -360,10 +231,6 @@ export type Database = {
       activity_level_enum: 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extremely_active'
       goal_type_enum: 'lose_weight' | 'maintain_weight' | 'gain_weight'
       meal_type_enum: 'breakfast' | 'lunch' | 'dinner' | 'snack'
-      diet_type_enum: 'no_restrictions' | 'vegetarian' | 'vegan' | 'keto' | 'paleo' | 'low_carb' | 'mediterranean' | 'gluten_free' | 'dairy_free'
-      prep_time_enum: 'quick' | 'moderate' | 'extended'
-      cooking_skill_enum: 'beginner' | 'intermediate' | 'advanced'
-      budget_enum: 'low' | 'medium' | 'high'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -476,32 +343,6 @@ export const Constants = {
         lunch: 'lunch',
         dinner: 'dinner',
         snack: 'snack',
-      },
-      diet_type_enum: {
-        no_restrictions: 'no_restrictions',
-        vegetarian: 'vegetarian',
-        vegan: 'vegan',
-        keto: 'keto',
-        paleo: 'paleo',
-        low_carb: 'low_carb',
-        mediterranean: 'mediterranean',
-        gluten_free: 'gluten_free',
-        dairy_free: 'dairy_free',
-      },
-      prep_time_enum: {
-        quick: 'quick',
-        moderate: 'moderate',
-        extended: 'extended',
-      },
-      cooking_skill_enum: {
-        beginner: 'beginner',
-        intermediate: 'intermediate',
-        advanced: 'advanced',
-      },
-      budget_enum: {
-        low: 'low',
-        medium: 'medium',
-        high: 'high',
       },
     },
   },
