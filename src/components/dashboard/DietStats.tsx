@@ -12,7 +12,7 @@ interface DietStatsProps {
   proteinPercentage: number;
   fatPercentage: number;
   waterConsumed: number; // Total water in oz
-  waterGoal: number; // Water goal in oz
+  waterGoal: number; // Water goal in oz (now dynamic)
   waterEntries: WaterIntake[];
   onAddWater?: () => void;
 }
@@ -24,14 +24,14 @@ const DietStats = ({
   proteinPercentage,
   fatPercentage,
   waterConsumed,
-  waterGoal,
+  waterGoal, // Use dynamic waterGoal
   waterEntries,
   onAddWater
 }: DietStatsProps) => {
   const caloriesPercentage = caloriesGoal > 0 ? Math.min(100, Math.round((caloriesConsumed / caloriesGoal) * 100)) : 0;
   const waterPercentage = waterGoal > 0 ? Math.min(100, Math.round((waterConsumed / waterGoal) * 100)) : 0;
 
-  const waterGoalMl = waterGoal * 29.5735; // Convert water goal from oz to ml
+  const waterGoalMl = waterGoal * 29.5735; // Convert water goal from oz to ml for internal calculation
 
   // Define 8 time slots covering the full 24 hours in 3-hour intervals
   const timeSlots = [

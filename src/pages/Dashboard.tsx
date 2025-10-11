@@ -107,7 +107,8 @@ const Dashboard = () => {
   const waterConsumedOz = Math.round(waterConsumedMl * 0.033814); // Convert ml to oz
 
   const caloriesGoal = profile?.daily_calorie_goal || 2000; // Use profile's daily_calorie_goal or default to 2000
-  const waterGoalOz = 64; // Default water goal in oz (approx 1.9 liters)
+  const waterGoalMl = profile?.water_goal_ml || 2000; // Use profile's water_goal_ml or default to 2000ml
+  const waterGoalOz = Math.round(waterGoalMl * 0.033814); // Convert water goal from ml to oz
 
   // Calculate macronutrient percentages (assuming 4 cal/g protein/carbs, 9 cal/g fat)
   const totalMacroCalories = (proteinConsumed * 4) + (carbsConsumed * 4) + (fatConsumed * 9);

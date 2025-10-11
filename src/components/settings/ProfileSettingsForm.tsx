@@ -106,6 +106,7 @@ const ProfileSettingsForm = ({
         goal_weight: profileData.goal_weight,
         activity_level: profileData.activity_level,
         daily_calorie_goal: profileData.daily_calorie_goal,
+        water_goal_ml: profileData.water_goal_ml, // Initialize water goal
       });
     }
   }, [profileData]);
@@ -322,6 +323,20 @@ const ProfileSettingsForm = ({
                 value={localProfile.daily_calorie_goal || ""}
                 placeholder="Calculated automatically"
                 disabled // This field is now disabled and auto-calculated
+              />
+            </div>
+
+            {/* New: Water Goal Input */}
+            <div className="space-y-2">
+              <Label htmlFor="waterGoalMl">Daily Water Goal (ml)</Label>
+              <Input
+                id="waterGoalMl"
+                type="number"
+                value={localProfile.water_goal_ml || ""}
+                onChange={(e) => handleProfileChange("water_goal_ml", parseInt(e.target.value) || null)}
+                placeholder="e.g., 2000"
+                min="0"
+                disabled={isGuest}
               />
             </div>
           </div>
