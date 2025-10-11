@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/AuthProvider"; // Import useAuth
+import { ModeToggle } from "@/components/ui/mode-toggle"; // Import ModeToggle
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -56,9 +57,12 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         <Link to="/dashboard" className="flex items-center">
           <span className="font-bold text-lg text-primary">Smart Diet Planner</span>
         </Link>
-        <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
-          {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
+        <div className="flex items-center gap-2">
+          <ModeToggle /> {/* Mobile Mode Toggle */}
+          <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
+            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
       </header>
 
       {/* Mobile Navigation */}
@@ -120,6 +124,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
               <div className="flex-1 truncate">
                 <p className="text-sm font-medium">{displayUserName}</p>
               </div>
+              <ModeToggle /> {/* Desktop Mode Toggle */}
             </div>
             <Button 
               variant="outline" 
