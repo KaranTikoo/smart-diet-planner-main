@@ -352,7 +352,7 @@ const Groceries = () => {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-6"> {/* This div starts here */}
                   {Object.entries(groupedItems)
                     .sort(([a], [b]) => {
                       const categoryOrder = categories;
@@ -457,17 +457,17 @@ const Groceries = () => {
                         </div>
                       </div>
                     ))}
-                </div>
-
-                <div className="pt-4 flex justify-between text-sm text-muted-foreground">
-                  <span>
-                    {items.filter((item) => !item.is_checked).length} items remaining
-                  </span>
-                  <span>
-                    {items.filter((item) => item.is_checked).length} completed
-                  </span>
-                </div>
-              </div>
+                  {/* This is the summary div, now correctly placed inside the space-y-6 div */}
+                  <div className="pt-4 flex justify-between text-sm text-muted-foreground">
+                    <span>
+                      {items.filter((item) => !item.is_checked).length} items remaining
+                    </span>
+                    <span>
+                      {items.filter((item) => item.is_checked).length} completed
+                    </span>
+                  </div>
+                </div> {/* This closes the space-y-6 div */}
+              )}
             </CardContent>
           </Card>
         </div>
