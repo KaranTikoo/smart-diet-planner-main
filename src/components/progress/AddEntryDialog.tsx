@@ -87,55 +87,55 @@ const AddEntryDialog = ({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="entry-date" className="text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+            <Label htmlFor="entry-date" className="sm:text-right">
               Date
             </Label>
             <Input
               id="entry-date"
               value={newEntry.date}
               onChange={(e) => setNewEntry({...newEntry, date: e.target.value})}
-              className="col-span-3"
+              className="sm:col-span-3"
               type="date"
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="entry-weight" className="text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+            <Label htmlFor="entry-weight" className="sm:text-right">
               Weight (kg)
             </Label>
             <Input
               id="entry-weight"
               value={newEntry.weight}
               onChange={(e) => setNewEntry({...newEntry, weight: e.target.value})}
-              className="col-span-3"
+              className="sm:col-span-3"
               type="number"
               step="0.1"
               placeholder="e.g., 75.5"
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="entry-calories" className="text-right">
+          <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+            <Label htmlFor="entry-calories" className="sm:text-right">
               Calories
             </Label>
             <Input
               id="entry-calories"
               value={newEntry.calories}
               onChange={(e) => setNewEntry({...newEntry, calories: e.target.value})}
-              className="col-span-3"
+              className="sm:col-span-3"
               type="number"
               placeholder="e.g., 1800"
             />
           </div>
           {newEntry.calories && ( // Only show meal type if calories are being entered
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="meal-type" className="text-right">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+              <Label htmlFor="meal-type" className="sm:text-right">
                 Meal Type
               </Label>
               <Select
                 value={newEntry.mealType}
                 onValueChange={(value: MealTypeEnum) => setNewEntry({ ...newEntry, mealType: value })}
               >
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger className="sm:col-span-3">
                   <SelectValue placeholder="Select meal type" />
                 </SelectTrigger>
                 <SelectContent>
