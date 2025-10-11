@@ -6,13 +6,21 @@ interface SummaryCardsProps {
   weightChange: number;
   isWeightLoss: boolean;
   averageCalories: number;
+  dailyCalorieGoal: number; // New prop for calorie goal
+  goalProgressPercentage: number; // New prop
+  goalProgressText: string;      // New prop
+  goalTypeText: string;          // New prop
 }
 
 const SummaryCards = ({ 
   currentWeight, 
   weightChange, 
   isWeightLoss, 
-  averageCalories 
+  averageCalories,
+  dailyCalorieGoal, // Use this
+  goalProgressPercentage,
+  goalProgressText,
+  goalTypeText,
 }: SummaryCardsProps) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -38,7 +46,7 @@ const SummaryCards = ({
         <CardContent>
           <div className="flex justify-between items-end">
             <div className="text-2xl font-bold">{averageCalories}</div>
-            <div className="text-sm text-muted-foreground">of 2000 goal</div>
+            <div className="text-sm text-muted-foreground">of {dailyCalorieGoal} goal</div> {/* Updated here */}
           </div>
         </CardContent>
       </Card>
@@ -49,8 +57,8 @@ const SummaryCards = ({
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-end">
-            <div className="text-2xl font-bold">0 days</div> {/* Initialized to 0 */}
-            <div className="text-sm text-muted-foreground">Best: 0 days</div> {/* Initialized to 0 */}
+            <div className="text-2xl font-bold">0 days</div>
+            <div className="text-sm text-muted-foreground">Best: 0 days</div>
           </div>
         </CardContent>
       </Card>
@@ -61,8 +69,8 @@ const SummaryCards = ({
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-end">
-            <div className="text-2xl font-bold">0%</div> {/* Initialized to 0 */}
-            <div className="text-sm text-muted-foreground">Weight loss</div>
+            <div className="text-2xl font-bold">{goalProgressText}</div>
+            <div className="text-sm text-muted-foreground capitalize">{goalTypeText}</div>
           </div>
         </CardContent>
       </Card>

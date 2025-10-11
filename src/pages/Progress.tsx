@@ -16,9 +16,11 @@ import AddEntryDialog from "@/components/progress/AddEntryDialog";
 import { useWeightEntries } from "@/hooks/useWeightEntries";
 import { useFoodEntries } from "@/hooks/useFoodEntries";
 import { useAuth } from "@/providers/AuthProvider";
+import { useProfile } from "@/hooks/useProfile"; // Import useProfile
 
 const Progress = () => {
   const { user } = useAuth();
+  const { profile, loading: profileLoading } = useProfile(); // Fetch profile
   const [period, setPeriod] = useState("week");
   const [isAddEntryDialogOpen, setIsAddEntryDialogOpen] = useState(false);
 
@@ -94,6 +96,65 @@ const Progress = () => {
     fat: chartDays.length > 0 ? Math.round(totalFat / chartDays.length) : 0,
   };
 
+  // --- Goal Progress Calculation ---
+  let goalProgressPercentage = 0;
+  let goalProgressText = "N/A";
+  let goalTypeText = "Not set";
+
+  if (profile && profile.goal_type && profile.goal_weight !== null) {
+    goalTypeText = profile.goal_type.replace(/_/g, ' ');
+    const targetWeight = profile.goal_weight;
+
+    if (initialWeight !== 0 && currentWeight !== 0) {
+      if (profile.goal_type === "lose_weight") {
+        if (initialWeight <= targetWeight) { // Handle invalid or already met goal
+          goalProgressText = "Goal met or invalid";
+          goalProgressPercentage = 100;
+        } else {
+          const totalChangeNeeded = initialWeight - targetWeight;
+          const actualChange = initialWeight - currentWeight;
+          if (totalChangeNeeded > 0) {
+            goalProgressPercentage = Math.round((actualChange / totalChangeNeeded) * 100);
+            goalProgressText = `${Math.max(0, goalProgressPercentage)}%`;
+          } else {
+            goalProgressText = "Goal invalid (no change needed)";
+          }
+        }
+      } else if (profile.goal_type === "gain_weight") {
+        if (initialWeight >= targetWeight) { // Handle invalid or already met goal
+          goalProgressText = "Goal met or invalid";
+          goalProgressPercentage = 100;
+        } else {
+          const totalChangeNeeded = targetWeight - initialWeight;
+          const actualChange = currentWeight - initialWeight;
+          if (totalChangeNeeded > 0) {
+            goalProgressPercentage = Math.round((actualChange / totalChangeNeeded) * 100);
+            goalProgressText = `${Math.max(0, goalProgressPercentage)}%`;
+          } else {
+            goalProgressText = "Goal invalid (no change needed)";
+          }
+        }
+      } else if (profile.goal_type === "maintain_weight") {
+        const maintenanceRange = 1; // +/- 1kg for maintenance
+        if (currentWeight >= initialWeight - maintenanceRange && currentWeight <= initialWeight + maintenanceRange) {
+          goalProgressText = "Maintaining";
+          goalProgressPercentage = 100;
+        } else {
+          goalProgressText = "Off track";
+          goalProgressPercentage = Math.round(100 - (Math.abs(currentWeight - initialWeight) / initialWeight) * 100); // Simple deviation
+        }
+      }
+    } else {
+      goalProgressText = "No weight entries";
+    }
+  } else if (profile && (!profile.goal_type || profile.goal_weight === null)) {
+    goalProgressText = "Set a goal in settings";
+    goalTypeText = "Not set";
+  }
+  // --- End Goal Progress Calculation ---
+
+  const dailyCalorieGoal = profile?.daily_calorie_goal || 2000; // Get from profile or default
+
   const handleAddEntry = () => {
     setIsAddEntryDialogOpen(true);
   };
@@ -114,6 +175,10 @@ const Progress = () => {
           weightChange={weightChange}
           isWeightLoss={isWeightLoss}
           averageCalories={averageCalories}
+          dailyCalorieGoal={dailyCalorieGoal} // Pass new prop
+          goalProgressPercentage={goalProgressPercentage}
+          goalProgressText={goalProgressText}
+          goalTypeText={goalTypeText}
         />
 
         {/* Main Charts */}
