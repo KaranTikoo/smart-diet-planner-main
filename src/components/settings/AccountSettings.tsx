@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { BadgeCheck, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase"; // Import supabase client
 
 interface AccountSettingsProps {
   user: any; // Supabase User object
@@ -21,8 +22,29 @@ const AccountSettings = ({ user, isGuest, profileLoading, signOut }: AccountSett
     toast.info("Account deletion functionality is not yet implemented.");
   };
 
-  const handleResetPassword = () => {
-    toast.info("Password reset functionality is not yet implemented.");
+  const handleResetPassword = async () => {
+    if (!user?.email) {
+      toast.error("No email associated with your account to reset password.");
+      return;
+    }
+    if (!supabase) {
+      toast.info("Password reset is only available with a connected Supabase backend.");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/login?reset=true`, // Redirect back to login after reset
+      });
+
+      if (error) {
+        throw error;
+      }
+      toast.success("Password reset link sent to your email!");
+    } catch (error: any) {
+      console.error("Error sending password reset email:", error);
+      toast.error(`Failed to send password reset link: ${error.message}`);
+    }
   };
 
   const handleLogout = async () => {
@@ -87,7 +109,7 @@ const AccountSettings = ({ user, isGuest, profileLoading, signOut }: AccountSett
             
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Password</h3>
-              <Button variant="outline" onClick={handleResetPassword}>
+              <Button variant="outline" onClick={handleResetPassword} disabled={profileLoading}>
                 Reset Password
               </Button>
               <p className="text-sm text-muted-foreground">
@@ -101,7 +123,7 @@ const AccountSettings = ({ user, isGuest, profileLoading, signOut }: AccountSett
               <h3 className="text-lg font-medium">Data & Privacy</h3>
               <div className="flex space-x-2">
                 <Button variant="outline" disabled>Download My Data</Button> {/* Download data not implemented */}
-                <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10" onClick={handleDeleteAccount}>
+                <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10" onClick={handleDeleteAccount} disabled={profileLoading}>
                   Delete Account
                 </Button>
               </div>

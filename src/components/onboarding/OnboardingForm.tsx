@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
-import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum } from "@/lib/supabase";
+import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum, DietTypeEnum, PrepTimeEnum, CookingSkillEnum, BudgetEnum } from "@/lib/supabase";
 import { User } from '@supabase/supabase-js'; // Import User type
 
 const OnboardingForm = () => {
@@ -31,6 +31,15 @@ const OnboardingForm = () => {
     goal_weight: null,
     activity_level: "moderately_active",
     daily_calorie_goal: null,
+    water_goal_ml: 2000, // Default water goal
+    diet_type: "no_restrictions",
+    allergies: [],
+    avoid_foods: "",
+    meals_per_day: 3,
+    snacks_per_day: 1,
+    preparation_time_preference: "moderate",
+    cooking_skill_level: "beginner",
+    budget_preference: "medium",
   });
 
   useEffect(() => {
@@ -45,6 +54,15 @@ const OnboardingForm = () => {
         goal_weight: profile.goal_weight,
         activity_level: profile.activity_level,
         daily_calorie_goal: profile.daily_calorie_goal,
+        water_goal_ml: profile.water_goal_ml,
+        diet_type: profile.diet_type,
+        allergies: profile.allergies || [],
+        avoid_foods: profile.avoid_foods || "",
+        meals_per_day: profile.meals_per_day,
+        snacks_per_day: profile.snacks_per_day,
+        preparation_time_preference: profile.preparation_time_preference,
+        cooking_skill_level: profile.cooking_skill_level,
+        budget_preference: profile.budget_preference,
       });
     }
   }, [profile, profileLoading]);
@@ -53,28 +71,13 @@ const OnboardingForm = () => {
     setOnboardingData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const [localDietaryPreferences, setLocalDietaryPreferences] = useState({
-    diet: "no_restrictions",
-    allergies: [] as string[],
-    avoidFoods: "",
-    mealsPerDay: 3,
-    snacksPerDay: 1,
-    preparationTime: "moderate",
-    cookingSkill: "beginner",
-    budget: "medium",
-  });
-
-  const handleLocalDietaryChange = (field: string, value: any) => {
-    setLocalDietaryPreferences((prev) => ({ ...prev, [field]: value }));
-  };
-
   const handleAllergiesChange = (allergy: string) => {
-    setLocalDietaryPreferences((prev) => {
-      const allergies = [...prev.allergies];
-      if (allergies.includes(allergy)) {
-        return { ...prev, allergies: allergies.filter((a) => a !== allergy) };
+    setOnboardingData((prev) => {
+      const currentAllergies = (prev.allergies || []) as string[];
+      if (currentAllergies.includes(allergy)) {
+        return { ...prev, allergies: currentAllergies.filter((a) => a !== allergy) };
       } else {
-        return { ...prev, allergies: [...allergies, allergy] };
+        return { ...prev, allergies: [...currentAllergies, allergy] };
       }
     });
   };
@@ -108,6 +111,15 @@ const OnboardingForm = () => {
         goal_weight: onboardingData.goal_weight || null,
         activity_level: onboardingData.activity_level as ActivityLevelEnum || null,
         daily_calorie_goal: onboardingData.daily_calorie_goal || 2000,
+        water_goal_ml: onboardingData.water_goal_ml || 2000,
+        diet_type: onboardingData.diet_type as DietTypeEnum || 'no_restrictions',
+        allergies: onboardingData.allergies || [],
+        avoid_foods: onboardingData.avoid_foods || null,
+        meals_per_day: onboardingData.meals_per_day || 3,
+        snacks_per_day: onboardingData.snacks_per_day || 1,
+        preparation_time_preference: onboardingData.preparation_time_preference as PrepTimeEnum || 'moderate',
+        cooking_skill_level: onboardingData.cooking_skill_level as CookingSkillEnum || 'beginner',
+        budget_preference: onboardingData.budget_preference as BudgetEnum || 'medium',
       };
 
       await saveProfile(user, profileDataToSave);
@@ -329,25 +341,16 @@ const OnboardingForm = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>How many meals do you prefer per day?</Label>
-                  <div className="pt-2">
-                    <Slider
-                      value={[localDietaryPreferences.mealsPerDay]}
-                      min={2}
-                      max={6}
-                      step={1}
-                      onValueChange={(value) => handleLocalDietaryChange("mealsPerDay", value[0])}
-                      disabled={isButtonDisabled}
-                    />
-                    <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-                      <span>2</span>
-                      <span>3</span>
-                      <span>4</span>
-                      <span>5</span>
-                      <span>6</span>
-                    </div>
-                  </div>
-                  <p className="text-center mt-2">{localDietaryPreferences.mealsPerDay} meals per day</p>
+                  <Label htmlFor="waterGoalMl">Daily Water Goal (ml)</Label>
+                  <Input
+                    id="waterGoalMl"
+                    type="number"
+                    value={onboardingData.water_goal_ml || ""}
+                    onChange={(e) => handleChange("water_goal_ml", parseInt(e.target.value) || null)}
+                    placeholder="e.g., 2000"
+                    min="0"
+                    disabled={isButtonDisabled}
+                  />
                 </div>
               </div>
             </TabsContent>
@@ -358,8 +361,8 @@ const OnboardingForm = () => {
                 <div className="space-y-2">
                   <Label>Dietary Preferences</Label>
                   <Select
-                    value={localDietaryPreferences.diet}
-                    onValueChange={(value) => handleLocalDietaryChange("diet", value)}
+                    value={onboardingData.diet_type || "no_restrictions"}
+                    onValueChange={(value: DietTypeEnum) => handleChange("diet_type", value)}
                     disabled={isButtonDisabled}
                   >
                     <SelectTrigger>
@@ -386,7 +389,7 @@ const OnboardingForm = () => {
                       <div key={allergy} className="flex items-center space-x-2">
                         <Checkbox
                           id={`allergy-${allergy}`}
-                          checked={localDietaryPreferences.allergies.includes(allergy)}
+                          checked={(onboardingData.allergies || []).includes(allergy)}
                           onCheckedChange={() => handleAllergiesChange(allergy)}
                           disabled={isButtonDisabled}
                         />
@@ -402,8 +405,8 @@ const OnboardingForm = () => {
                   <Label htmlFor="avoidFoods">Foods you want to avoid</Label>
                   <Textarea
                     id="avoidFoods"
-                    value={localDietaryPreferences.avoidFoods}
-                    onChange={(e) => handleLocalDietaryChange("avoidFoods", e.target.value)}
+                    value={onboardingData.avoid_foods || ""}
+                    onChange={(e) => handleChange("avoid_foods", e.target.value)}
                     placeholder="List any specific foods you want to avoid"
                     rows={3}
                     disabled={isButtonDisabled}
@@ -411,10 +414,89 @@ const OnboardingForm = () => {
                 </div>
                 
                 <div className="space-y-2">
+                  <Label>Meals per day</Label>
+                  <div className="pt-2">
+                    <Slider
+                      value={[onboardingData.meals_per_day || 3]}
+                      min={2}
+                      max={6}
+                      step={1}
+                      onValueChange={(value) => handleChange("meals_per_day", value[0])}
+                      disabled={isButtonDisabled}
+                    />
+                    <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+                      <span>2</span>
+                      <span>3</span>
+                      <span>4</span>
+                      <span>5</span>
+                      <span>6</span>
+                    </div>
+                  </div>
+                  <p className="text-center mt-2">{onboardingData.meals_per_day || 3} meals per day</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Snacks per day</Label>
+                  <div className="pt-2">
+                    <Slider
+                      value={[onboardingData.snacks_per_day || 1]}
+                      min={0}
+                      max={3}
+                      step={1}
+                      onValueChange={(value) => handleChange("snacks_per_day", value[0])}
+                      disabled={isButtonDisabled}
+                    />
+                    <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+                      <span>0</span>
+                      <span>1</span>
+                      <span>2</span>
+                      <span>3</span>
+                    </div>
+                  </div>
+                  <p className="text-center mt-2">{onboardingData.snacks_per_day || 1} snacks per day</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Cooking Time Preference</Label>
+                  <Select
+                    value={onboardingData.preparation_time_preference || "moderate"}
+                    onValueChange={(value: PrepTimeEnum) => handleChange("preparation_time_preference", value)}
+                    disabled={isButtonDisabled}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select cooking time preference" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="quick">Quick (under 15 minutes)</SelectItem>
+                      <SelectItem value="moderate">Moderate (15-30 minutes)</SelectItem>
+                      <SelectItem value="extended">Extended (30+ minutes)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Cooking Skill Level</Label>
+                  <Select
+                    value={onboardingData.cooking_skill_level || "beginner"}
+                    onValueChange={(value: CookingSkillEnum) => handleChange("cooking_skill_level", value)}
+                    disabled={isButtonDisabled}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select skill level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="beginner">Beginner</SelectItem>
+                      <SelectItem value="intermediate">Intermediate</SelectItem>
+                      <SelectItem value="advanced">Advanced</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
                   <Label>Budget Preference</Label>
                   <RadioGroup
-                    value={localDietaryPreferences.budget}
-                    onValueChange={(value) => handleLocalDietaryChange("budget", value)}
+                    value={onboardingData.budget_preference || "medium"}
+                    onValueChange={(value: BudgetEnum) => handleChange("budget_preference", value)}
                     className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
                     disabled={isButtonDisabled}
                   >
@@ -431,24 +513,6 @@ const OnboardingForm = () => {
                       <Label htmlFor="budget-high">Premium</Label>
                     </div>
                   </RadioGroup>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Cooking Time Preference</Label>
-                  <Select
-                    value={localDietaryPreferences.preparationTime}
-                    onValueChange={(value) => handleLocalDietaryChange("preparationTime", value)}
-                    disabled={isButtonDisabled}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select cooking time preference" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="quick">Quick (under 15 minutes)</SelectItem>
-                      <SelectItem value="moderate">Moderate (15-30 minutes)</SelectItem>
-                      <SelectItem value="extended">Extended (30+ minutes)</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
             </TabsContent>

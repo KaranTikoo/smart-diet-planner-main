@@ -16,6 +16,10 @@ export type GenderEnum = Enums<'gender_enum'>
 export type ActivityLevelEnum = Enums<'activity_level_enum'>
 export type GoalTypeEnum = Enums<'goal_type_enum'>
 export type MealTypeEnum = Enums<'meal_type_enum'>
+export type DietTypeEnum = Enums<'diet_type_enum'>
+export type PrepTimeEnum = Enums<'prep_time_enum'>
+export type CookingSkillEnum = Enums<'cooking_skill_enum'>
+export type BudgetEnum = Enums<'budget_enum'>
 
 // Also export the full Database type if needed
 export type AppDatabase = Database

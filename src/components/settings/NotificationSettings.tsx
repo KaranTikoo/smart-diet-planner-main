@@ -32,7 +32,7 @@ const NotificationSettings = ({ user, isGuest, profileLoading }: NotificationSet
       return;
     }
     // In a real application, you would send these settings to your backend/Supabase
-    console.log("Saving notification settings:", notifications);
+    console.log("Saving notification settings for user:", user?.id, notifications);
     toast.success("Notification settings saved successfully!");
   };
 
@@ -91,6 +91,9 @@ const NotificationSettings = ({ user, isGuest, profileLoading }: NotificationSet
             disabled={isGuest}
           />
         </div>
+        <p className="text-sm text-muted-foreground -mt-2">
+          (This setting controls whether you *receive* emails, not whether you *send* them from the app.)
+        </p>
         <div className="flex items-center justify-between">
           <Label htmlFor="push-notifications">Push Notifications</Label>
           <Switch

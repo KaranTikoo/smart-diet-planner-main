@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useInventory } from "@/hooks/useInventory"; // Import useInventory
+import { supabase } from "@/lib/supabase"; // Import supabase client
+import { useAuth } from "@/providers/AuthProvider"; // Import useAuth
 
 interface GroceryItem {
   id: string;
@@ -29,6 +31,7 @@ interface GroceryItem {
 }
 
 const Groceries = () => {
+  const { user } = useAuth(); // Get user for email
   const { addItem: addInventoryItem } = useInventory(); // Use addItem from useInventory
   const [items, setItems] = useState<GroceryItem[]>([
     { id: "1", name: "Chicken breast", category: "protein", checked: false },
@@ -176,15 +179,74 @@ const Groceries = () => {
 
   const handlePrintList = () => {
     toast.info("Preparing grocery list for printing...");
-    // This would typically trigger a print dialog
+    window.print(); // Triggers browser print dialog
   };
 
   const handleShareList = () => {
-    toast.info("Share functionality coming soon");
+    if (navigator.share) {
+      const listText = items.map(item => `- ${item.name} (${item.category})`).join('\n');
+      navigator.share({
+        title: 'My Grocery List',
+        text: `Here's my grocery list from Smart Diet Planner:\n\n${listText}`,
+        url: window.location.href,
+      }).then(() => toast.success('Grocery list shared!'))
+        .catch((error) => toast.error(`Failed to share list: ${error.message}`));
+    } else {
+      toast.info("Web Share API is not supported in your browser. Try emailing the list instead!");
+    }
   };
 
-  const handleEmailList = () => {
-    toast.info("Email functionality coming soon");
+  const handleEmailList = async () => {
+    if (!user?.email) {
+      toast.error("Please log in to email your grocery list.");
+      return;
+    }
+    if (items.length === 0) {
+      toast.info("Your grocery list is empty. Add some items first!");
+      return;
+    }
+
+    toast.info("Sending your grocery list via email...");
+
+    const listHtml = `
+      <h1>Your Grocery List from Smart Diet Planner</h1>
+      <p>Here are the items on your list:</p>
+      <ul>
+        ${Object.entries(groupedItems).map(([category, categoryItems]) => `
+          <li><strong>${category.charAt(0).toUpperCase() + category.slice(1)}</strong>
+            <ul>
+              ${categoryItems.map(item => `
+                <li>${item.checked ? '&#10003; ' : ''}${item.name}</li>
+              `).join('')}
+            </ul>
+          </li>
+        `).join('')}
+      </ul>
+      <p>Happy shopping!</p>
+    `;
+
+    const listText = items.map(item => `${item.checked ? '[x] ' : '[ ] '}${item.name} (${item.category})`).join('\n');
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-email', {
+        body: {
+          to: user.email,
+          subject: 'Your Smart Diet Planner Grocery List',
+          html: listHtml,
+          text: listText,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Grocery list sent to your email!");
+      console.log("Email sent response:", data);
+    } catch (error: any) {
+      console.error("Error sending email:", error);
+      toast.error(`Failed to send email: ${error.message || 'Unknown error'}`);
+    }
   };
 
   return (
