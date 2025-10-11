@@ -42,8 +42,10 @@ const DietStats = ({
     { label: "12-3pm", startHour: 12, endHour: 15 },
     { label: "3-6pm", startHour: 15, endHour: 18 },
     { label: "6-9pm", startHour: 18, endHour: 21 },
-    { label: "9-12am", startHour: 21, endHour: 24 },
+    { label: "9-12pm", startHour: 21, endHour: 24 }, // Corrected label
   ];
+
+  const proportionalSlotGoal = waterGoalMl / timeSlots.length; // Distribute daily goal evenly across slots
 
   const waterIntakeBySlot = timeSlots.map(slot => {
     const totalMlInSlot = waterEntries
@@ -53,7 +55,8 @@ const DietStats = ({
       })
       .reduce((sum, entry) => sum + entry.amount_ml, 0);
     
-    const fillPercentage = waterGoalMl > 0 ? Math.min(100, (totalMlInSlot / waterGoalMl) * 100) : 0;
+    // Calculate fill percentage based on the proportional goal for this slot
+    const fillPercentage = proportionalSlotGoal > 0 ? Math.min(100, (totalMlInSlot / proportionalSlotGoal) * 100) : 0;
     return { ...slot, totalMlInSlot, fillPercentage };
   });
 
