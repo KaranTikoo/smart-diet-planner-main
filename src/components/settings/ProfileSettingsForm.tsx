@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/AuthProvider";
-import { useProfile } from "@/hooks/useProfile";
 import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum } from "@/lib/supabase";
 
 interface ProfileSettingsFormProps {
@@ -20,6 +19,7 @@ interface ProfileSettingsFormProps {
   profileData: Partial<Profile> | null;
   profileLoading: boolean;
   saveProfile: (user: any, updates: Partial<Profile>) => Promise<any>;
+  isSaving: boolean; // New prop for global saving state
 }
 
 const ProfileSettingsForm = ({
@@ -28,6 +28,7 @@ const ProfileSettingsForm = ({
   profileData,
   profileLoading,
   saveProfile,
+  isSaving, // Destructure new prop
 }: ProfileSettingsFormProps) => {
   const [localProfile, setLocalProfile] = useState<Partial<Profile>>({});
 
@@ -109,13 +110,28 @@ const ProfileSettingsForm = ({
     }
   }, [profileData]);
 
+  // NEW useEffect to automatically save calculated daily_calorie_goal
   useEffect(() => {
-    const calculatedGoal = calculateDailyCalorieGoal();
-    if (calculatedGoal !== null && calculatedGoal !== localProfile.daily_calorie_goal) {
-      setLocalProfile((prev) => ({ ...prev, daily_calorie_goal: calculatedGoal }));
+    if (isGuest || !user || profileLoading || isSaving) {
+      return; // Don't auto-save if guest, no user, profile loading, or already saving
     }
-  }, [calculateDailyCalorieGoal, localProfile.daily_calorie_goal]);
 
+    const calculatedGoal = calculateDailyCalorieGoal();
+    
+    // Only save if the calculated goal is different from the current *persisted* profile data
+    // and different from the current local state (to avoid immediate re-save after setting local state)
+    if (calculatedGoal !== null && calculatedGoal !== profileData?.daily_calorie_goal) {
+      // Update local state first to reflect the change immediately in the UI
+      setLocalProfile((prev) => {
+        if (prev.daily_calorie_goal !== calculatedGoal) {
+          // Only trigger save if the calculated goal is truly new
+          saveProfile(user, { daily_calorie_goal: calculatedGoal });
+          return { ...prev, daily_calorie_goal: calculatedGoal };
+        }
+        return prev;
+      });
+    }
+  }, [calculateDailyCalorieGoal, user, isGuest, profileLoading, isSaving, profileData, saveProfile]); // Add dependencies
 
   const handleProfileChange = (field: keyof Profile, value: any) => {
     setLocalProfile((prev) => ({ ...prev, [field]: value }));
@@ -311,7 +327,7 @@ const ProfileSettingsForm = ({
           </div>
         </CardContent>
         <CardFooter className="flex justify-end">
-          <Button onClick={handleSaveChanges} disabled={profileLoading || isGuest}>Save Changes</Button>
+          <Button onClick={handleSaveChanges} disabled={profileLoading || isGuest || isSaving}>Save Changes</Button>
         </CardFooter>
       </Card>
       
@@ -444,7 +460,7 @@ const ProfileSettingsForm = ({
           </div>
         </CardContent>
         <CardFooter className="flex justify-end">
-          <Button onClick={handleSaveChanges} disabled={profileLoading || isGuest}>Save Changes</Button>
+          <Button onClick={handleSaveChanges} disabled={profileLoading || isGuest || isSaving}>Save Changes</Button>
         </CardFooter>
       </Card>
     </div>

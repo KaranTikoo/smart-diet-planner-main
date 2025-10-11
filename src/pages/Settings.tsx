@@ -12,7 +12,7 @@ import AccountSettings from "@/components/settings/AccountSettings";
 
 const Settings = () => {
   const { user, isGuest, signOut } = useAuth();
-  const { profile, saveProfile, loading: profileLoading } = useProfile();
+  const { profile, saveProfile, loading: profileLoading, isSaving } = useProfile(); // Get isSaving
 
   return (
     <MainLayout>
@@ -46,6 +46,7 @@ const Settings = () => {
               profileData={profile}
               profileLoading={profileLoading}
               saveProfile={saveProfile}
+              isSaving={isSaving} {/* Pass isSaving prop */}
             />
           </TabsContent>
           
