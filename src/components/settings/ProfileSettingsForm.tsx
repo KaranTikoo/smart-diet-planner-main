@@ -54,6 +54,7 @@ const ProfileSettingsForm = ({
         goal_type: profileData.goal_type,
         goal_weight: profileData.goal_weight,
         activity_level: profileData.activity_level,
+        daily_calorie_goal: profileData.daily_calorie_goal, // Initialize daily_calorie_goal
       });
       // If dietary preferences were stored in Supabase, load them here.
       // For now, they remain local to this component.
@@ -239,6 +240,20 @@ const ProfileSettingsForm = ({
                   <SelectItem value="extremely_active">Very Active (hard daily exercise & physical job)</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dailyCalorieGoal">Daily Calorie Goal</Label>
+              <Input
+                id="dailyCalorieGoal"
+                type="number"
+                value={localProfile.daily_calorie_goal || ""}
+                onChange={(e) => handleProfileChange("daily_calorie_goal", parseInt(e.target.value) || null)}
+                placeholder="e.g., 2000"
+                min="500"
+                max="5000"
+                disabled={isGuest}
+              />
             </div>
           </div>
         </CardContent>
