@@ -1,28 +1,28 @@
 import { useState, useEffect } from 'react'
-import { supabase, Profile } from '@/lib/supabase'
+import { supabase, Profile, DietTypeEnum, PrepTimeEnum, CookingSkillEnum, BudgetEnum } from '@/lib/supabase'
 import { useAuth } from '@/providers/AuthProvider'
 import { toast } from 'sonner'
-import { User } from '@supabase/supabase-js' // Import User type
-import { Database } from '@/integrations/supabase/types' // Import Database type
+import { User } from '@supabase/supabase-js'
+import { Database } from '@/integrations/supabase/types'
 
 export const useProfile = () => {
-  const { user: authUser } = useAuth() // Renamed to avoid conflict with function param
+  const { user: authUser } = useAuth()
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(false) // For initial fetch
-  const [isSaving, setIsSaving] = useState(false); // For create/update operations
+  const [loading, setLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchProfile = async () => {
-    if (!authUser) return // Use authUser here
+    if (!authUser) return
 
     setLoading(true)
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', authUser.id) // Use authUser here
+        .eq('id', authUser.id)
         .single()
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 means no rows found
+      if (error && error.code !== 'PGRST116') {
         throw error
       }
 
@@ -35,9 +35,8 @@ export const useProfile = () => {
     }
   }
 
-  // saveProfile now explicitly takes the user object
   const saveProfile = async (user: User, updates: Partial<Profile>) => {
-    if (!user.email) { // Explicit check for user.email
+    if (!user.email) {
       toast.error('Authentication error: User email not found for profile save operation.');
       console.error('User object is missing email:', user);
       return;
@@ -53,7 +52,7 @@ export const useProfile = () => {
 
       const { data, error } = await supabase
         .from('profiles')
-        .upsert([profileData]) // Pass the explicitly typed object in an array
+        .upsert([profileData])
         .select()
         .single()
 
@@ -63,8 +62,8 @@ export const useProfile = () => {
       toast.success('Profile saved successfully!')
       return data
     } catch (error: any) {
-      console.error('Error saving profile:', error) // Log the full error object
-      toast.error(`Failed to save profile: ${error.message || 'Unknown error'}`) // Provide more specific toast message
+      console.error('Error saving profile:', error)
+      toast.error(`Failed to save profile: ${error.message || 'Unknown error'}`)
     } finally {
       setIsSaving(false);
     }
@@ -72,13 +71,13 @@ export const useProfile = () => {
 
   useEffect(() => {
     fetchProfile()
-  }, [authUser]) // Depend on authUser
+  }, [authUser])
 
   return {
     profile,
     loading,
     isSaving,
-    saveProfile, // Export saveProfile as the single function
+    saveProfile,
     refetch: fetchProfile,
   }
 }

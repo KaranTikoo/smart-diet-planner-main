@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
-import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum } from "@/lib/supabase";
-import { User } from '@supabase/supabase-js'; // Import User type
+import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum, DietTypeEnum, PrepTimeEnum, CookingSkillEnum, BudgetEnum } from "@/lib/supabase";
+import { User } from '@supabase/supabase-js';
 
 const OnboardingForm = () => {
   const navigate = useNavigate();
@@ -31,7 +31,68 @@ const OnboardingForm = () => {
     goal_weight: null,
     activity_level: "moderately_active",
     daily_calorie_goal: null,
+    water_goal_ml: 2000, // Default water goal
+    // New dietary preferences
+    diet_type: "no_restrictions",
+    allergies: [],
+    avoid_foods: "",
+    meals_per_day: 3,
+    snacks_per_day: 1,
+    preparation_time_preference: "moderate",
+    cooking_skill_level: "beginner",
+    budget_preference: "medium",
   });
+
+  // Function to calculate daily calorie goal
+  const calculateDailyCalorieGoal = useCallback(() => {
+    const { age, gender, height, current_weight, activity_level, goal_type } = onboardingData;
+
+    if (!age || !gender || !height || !current_weight || !activity_level || !goal_type) {
+      return null; // Cannot calculate if essential data is missing
+    }
+
+    let bmr: number; // Basal Metabolic Rate
+    // Mifflin-St Jeor Equation
+    if (gender === 'male') {
+      bmr = (10 * current_weight) + (6.25 * height) - (5 * age) + 5;
+    } else { // female or other, using female equation as a default for 'other'
+      bmr = (10 * current_weight) + (6.25 * height) - (5 * age) - 161;
+    }
+
+    let activityFactor: number;
+    switch (activity_level) {
+      case 'sedentary':
+        activityFactor = 1.2;
+        break;
+      case 'lightly_active':
+        activityFactor = 1.375;
+        break;
+      case 'moderately_active':
+        activityFactor = 1.55;
+        break;
+      case 'very_active':
+        activityFactor = 1.725;
+        break;
+      case 'extremely_active':
+        activityFactor = 1.9;
+        break;
+      default:
+        activityFactor = 1.2; // Default to sedentary if not set
+    }
+
+    let tdee = bmr * activityFactor; // Total Daily Energy Expenditure
+
+    // Adjust for goal type
+    if (goal_type === 'lose_weight') {
+      tdee -= 500; // Moderate deficit for weight loss
+    } else if (goal_type === 'gain_weight') {
+      tdee += 500; // Moderate surplus for weight gain
+    }
+    // For 'maintain_weight', tdee is used directly
+
+    return Math.round(tdee);
+  }, [onboardingData.age, onboardingData.gender, onboardingData.height, onboardingData.current_weight, onboardingData.activity_level, onboardingData.goal_type]);
+
 
   useEffect(() => {
     if (profile && !profileLoading) {
@@ -45,36 +106,46 @@ const OnboardingForm = () => {
         goal_weight: profile.goal_weight,
         activity_level: profile.activity_level,
         daily_calorie_goal: profile.daily_calorie_goal,
+        water_goal_ml: profile.water_goal_ml,
+        // Initialize new dietary preferences from profile
+        diet_type: profile.diet_type || "no_restrictions",
+        allergies: profile.allergies || [],
+        avoid_foods: profile.avoid_foods || "",
+        meals_per_day: profile.meals_per_day || 3,
+        snacks_per_day: profile.snacks_per_day || 1,
+        preparation_time_preference: profile.preparation_time_preference || "moderate",
+        cooking_skill_level: profile.cooking_skill_level || "beginner",
+        budget_preference: profile.budget_preference || "medium",
       });
     }
   }, [profile, profileLoading]);
+
+  // NEW useEffect to automatically save calculated daily_calorie_goal
+  useEffect(() => {
+    if (authLoading || profileLoading || isSaving) {
+      return; // Don't auto-calculate/save if auth/profile is loading or already saving
+    }
+
+    const calculatedGoal = calculateDailyCalorieGoal();
+    
+    // Only update local state if the calculated goal is different
+    if (calculatedGoal !== null && calculatedGoal !== onboardingData.daily_calorie_goal) {
+      setOnboardingData((prev) => ({ ...prev, daily_calorie_goal: calculatedGoal }));
+    }
+  }, [calculateDailyCalorieGoal, authLoading, profileLoading, isSaving, onboardingData.daily_calorie_goal]);
+
 
   const handleChange = (field: keyof Profile, value: any) => {
     setOnboardingData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const [localDietaryPreferences, setLocalDietaryPreferences] = useState({
-    diet: "no_restrictions",
-    allergies: [] as string[],
-    avoidFoods: "",
-    mealsPerDay: 3,
-    snacksPerDay: 1,
-    preparationTime: "moderate",
-    cookingSkill: "beginner",
-    budget: "medium",
-  });
-
-  const handleLocalDietaryChange = (field: string, value: any) => {
-    setLocalDietaryPreferences((prev) => ({ ...prev, [field]: value }));
-  };
-
   const handleAllergiesChange = (allergy: string) => {
-    setLocalDietaryPreferences((prev) => {
-      const allergies = [...prev.allergies];
-      if (allergies.includes(allergy)) {
-        return { ...prev, allergies: allergies.filter((a) => a !== allergy) };
+    setOnboardingData((prev) => {
+      const currentAllergies = (prev.allergies || []) as string[];
+      if (currentAllergies.includes(allergy)) {
+        return { ...prev, allergies: currentAllergies.filter((a) => a !== allergy) };
       } else {
-        return { ...prev, allergies: [...allergies, allergy] };
+        return { ...prev, allergies: [...currentAllergies, allergy] };
       }
     });
   };
@@ -84,7 +155,7 @@ const OnboardingForm = () => {
     
     if (!user) {
       toast.error("Authentication error: User not found. Please log in again.");
-      navigate("/login"); // Redirect to login if user is unexpectedly null
+      navigate("/login");
       return;
     }
 
@@ -108,6 +179,16 @@ const OnboardingForm = () => {
         goal_weight: onboardingData.goal_weight || null,
         activity_level: onboardingData.activity_level as ActivityLevelEnum || null,
         daily_calorie_goal: onboardingData.daily_calorie_goal || 2000,
+        water_goal_ml: onboardingData.water_goal_ml || 2000,
+        // Include new dietary preferences
+        diet_type: onboardingData.diet_type as DietTypeEnum || "no_restrictions",
+        allergies: onboardingData.allergies || [],
+        avoid_foods: onboardingData.avoid_foods || null,
+        meals_per_day: onboardingData.meals_per_day || 3,
+        snacks_per_day: onboardingData.snacks_per_day || 1,
+        preparation_time_preference: onboardingData.preparation_time_preference as PrepTimeEnum || "moderate",
+        cooking_skill_level: onboardingData.cooking_skill_level as CookingSkillEnum || "beginner",
+        budget_preference: onboardingData.budget_preference as BudgetEnum || "medium",
       };
 
       await saveProfile(user, profileDataToSave);
@@ -142,7 +223,6 @@ const OnboardingForm = () => {
 
   const isButtonDisabled = authLoading || profileLoading || isSaving;
 
-  // Render loading state or redirect if user is not authenticated
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -152,13 +232,11 @@ const OnboardingForm = () => {
   }
 
   if (!user) {
-    // If not loading and no user, redirect to login. This should ideally be caught by RequireAuth,
-    // but as a fallback, we ensure the onboarding form isn't rendered in an unauthenticated state.
     useEffect(() => {
       toast.error("You must be logged in to complete onboarding.");
       navigate("/login");
     }, [navigate]);
-    return null; // Don't render anything while redirecting
+    return null;
   }
 
   return (
@@ -332,11 +410,11 @@ const OnboardingForm = () => {
                   <Label>How many meals do you prefer per day?</Label>
                   <div className="pt-2">
                     <Slider
-                      value={[localDietaryPreferences.mealsPerDay]}
+                      value={[onboardingData.meals_per_day || 3]}
                       min={2}
                       max={6}
                       step={1}
-                      onValueChange={(value) => handleLocalDietaryChange("mealsPerDay", value[0])}
+                      onValueChange={(value) => handleChange("meals_per_day", value[0])}
                       disabled={isButtonDisabled}
                     />
                     <div className="flex justify-between mt-2 text-sm text-muted-foreground">
@@ -347,7 +425,7 @@ const OnboardingForm = () => {
                       <span>6</span>
                     </div>
                   </div>
-                  <p className="text-center mt-2">{localDietaryPreferences.mealsPerDay} meals per day</p>
+                  <p className="text-center mt-2">{onboardingData.meals_per_day} meals per day</p>
                 </div>
               </div>
             </TabsContent>
@@ -358,8 +436,8 @@ const OnboardingForm = () => {
                 <div className="space-y-2">
                   <Label>Dietary Preferences</Label>
                   <Select
-                    value={localDietaryPreferences.diet}
-                    onValueChange={(value) => handleLocalDietaryChange("diet", value)}
+                    value={onboardingData.diet_type || "no_restrictions"}
+                    onValueChange={(value: DietTypeEnum) => handleChange("diet_type", value)}
                     disabled={isButtonDisabled}
                   >
                     <SelectTrigger>
@@ -386,7 +464,7 @@ const OnboardingForm = () => {
                       <div key={allergy} className="flex items-center space-x-2">
                         <Checkbox
                           id={`allergy-${allergy}`}
-                          checked={localDietaryPreferences.allergies.includes(allergy)}
+                          checked={(onboardingData.allergies || []).includes(allergy)}
                           onCheckedChange={() => handleAllergiesChange(allergy)}
                           disabled={isButtonDisabled}
                         />
@@ -402,8 +480,8 @@ const OnboardingForm = () => {
                   <Label htmlFor="avoidFoods">Foods you want to avoid</Label>
                   <Textarea
                     id="avoidFoods"
-                    value={localDietaryPreferences.avoidFoods}
-                    onChange={(e) => handleLocalDietaryChange("avoidFoods", e.target.value)}
+                    value={onboardingData.avoid_foods || ""}
+                    onChange={(e) => handleChange("avoid_foods", e.target.value)}
                     placeholder="List any specific foods you want to avoid"
                     rows={3}
                     disabled={isButtonDisabled}
@@ -413,8 +491,8 @@ const OnboardingForm = () => {
                 <div className="space-y-2">
                   <Label>Budget Preference</Label>
                   <RadioGroup
-                    value={localDietaryPreferences.budget}
-                    onValueChange={(value) => handleLocalDietaryChange("budget", value)}
+                    value={onboardingData.budget_preference || "medium"}
+                    onValueChange={(value: BudgetEnum) => handleChange("budget_preference", value)}
                     className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
                     disabled={isButtonDisabled}
                   >
@@ -436,8 +514,8 @@ const OnboardingForm = () => {
                 <div className="space-y-2">
                   <Label>Cooking Time Preference</Label>
                   <Select
-                    value={localDietaryPreferences.preparationTime}
-                    onValueChange={(value) => handleLocalDietaryChange("preparationTime", value)}
+                    value={onboardingData.preparation_time_preference || "moderate"}
+                    onValueChange={(value: PrepTimeEnum) => handleChange("preparation_time_preference", value)}
                     disabled={isButtonDisabled}
                   >
                     <SelectTrigger>

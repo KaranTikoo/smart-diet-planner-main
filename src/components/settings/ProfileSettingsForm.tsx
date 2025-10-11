@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/AuthProvider";
-import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum } from "@/lib/supabase";
+import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum, DietTypeEnum, PrepTimeEnum, CookingSkillEnum, BudgetEnum } from "@/lib/supabase";
 
 interface ProfileSettingsFormProps {
   user: any; // Supabase User object
@@ -31,18 +31,6 @@ const ProfileSettingsForm = ({
   isSaving, // Destructure new prop
 }: ProfileSettingsFormProps) => {
   const [localProfile, setLocalProfile] = useState<Partial<Profile>>({});
-
-  // Local state for preferences not directly in Supabase 'profiles' table
-  const [localDietaryPreferences, setLocalDietaryPreferences] = useState({
-    diet: "no_restrictions",
-    allergies: [] as string[],
-    avoidFoods: "",
-    mealsPerDay: 3,
-    snacksPerDay: 1,
-    preparationTime: "moderate",
-    cookingSkill: "beginner",
-    budget: "medium",
-  });
 
   // Function to calculate daily calorie goal
   const calculateDailyCalorieGoal = useCallback(() => {
@@ -106,7 +94,16 @@ const ProfileSettingsForm = ({
         goal_weight: profileData.goal_weight,
         activity_level: profileData.activity_level,
         daily_calorie_goal: profileData.daily_calorie_goal,
-        water_goal_ml: profileData.water_goal_ml, // Initialize water goal
+        water_goal_ml: profileData.water_goal_ml,
+        // Initialize new dietary preferences from profile
+        diet_type: profileData.diet_type || "no_restrictions",
+        allergies: profileData.allergies || [],
+        avoid_foods: profileData.avoid_foods || "",
+        meals_per_day: profileData.meals_per_day || 3,
+        snacks_per_day: profileData.snacks_per_day || 1,
+        preparation_time_preference: profileData.preparation_time_preference || "moderate",
+        cooking_skill_level: profileData.cooking_skill_level || "beginner",
+        budget_preference: profileData.budget_preference || "medium",
       });
     }
   }, [profileData]);
@@ -138,17 +135,13 @@ const ProfileSettingsForm = ({
     setLocalProfile((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleLocalDietaryChange = (field: string, value: any) => {
-    setLocalDietaryPreferences((prev) => ({ ...prev, [field]: value }));
-  };
-
   const handleAllergiesChange = (allergy: string) => {
-    setLocalDietaryPreferences((prev) => {
-      const allergies = [...prev.allergies];
-      if (allergies.includes(allergy)) {
-        return { ...prev, allergies: allergies.filter((a) => a !== allergy) };
+    setLocalProfile((prev) => {
+      const currentAllergies = (prev.allergies || []) as string[];
+      if (currentAllergies.includes(allergy)) {
+        return { ...prev, allergies: currentAllergies.filter((a) => a !== allergy) };
       } else {
-        return { ...prev, allergies: [...allergies, allergy] };
+        return { ...prev, allergies: [...currentAllergies, allergy] };
       }
     });
   };
@@ -358,8 +351,8 @@ const ProfileSettingsForm = ({
             <div className="space-y-2">
               <Label>Dietary Preferences</Label>
               <Select
-                value={localDietaryPreferences.diet}
-                onValueChange={(value) => handleLocalDietaryChange("diet", value)}
+                value={localProfile.diet_type || "no_restrictions"}
+                onValueChange={(value: DietTypeEnum) => handleProfileChange("diet_type", value)}
                 disabled={isGuest}
               >
                 <SelectTrigger>
@@ -386,7 +379,7 @@ const ProfileSettingsForm = ({
                   <div key={allergy} className="flex items-center space-x-2">
                     <Checkbox
                       id={`allergy-${allergy}`}
-                      checked={localDietaryPreferences.allergies.includes(allergy)}
+                      checked={(localProfile.allergies || []).includes(allergy)}
                       onCheckedChange={() => handleAllergiesChange(allergy)}
                       disabled={isGuest}
                     />
@@ -402,8 +395,8 @@ const ProfileSettingsForm = ({
               <Label htmlFor="avoidFoods">Foods you want to avoid</Label>
               <Textarea
                 id="avoidFoods"
-                value={localDietaryPreferences.avoidFoods}
-                onChange={(e) => handleLocalDietaryChange("avoidFoods", e.target.value)}
+                value={localProfile.avoid_foods || ""}
+                onChange={(e) => handleProfileChange("avoid_foods", e.target.value)}
                 placeholder="List any specific foods you want to avoid"
                 rows={3}
                 disabled={isGuest}
@@ -414,11 +407,11 @@ const ProfileSettingsForm = ({
               <Label>How many meals do you prefer per day?</Label>
               <div className="pt-2">
                 <Slider
-                  value={[localDietaryPreferences.mealsPerDay]}
+                  value={[localProfile.meals_per_day || 3]}
                   min={2}
                   max={6}
                   step={1}
-                  onValueChange={(value) => handleLocalDietaryChange("mealsPerDay", value[0])}
+                  onValueChange={(value) => handleProfileChange("meals_per_day", value[0])}
                   disabled={isGuest}
                 />
                 <div className="flex justify-between mt-2 text-sm text-muted-foreground">
@@ -429,14 +422,14 @@ const ProfileSettingsForm = ({
                   <span>6</span>
                 </div>
               </div>
-              <p className="text-center mt-2">{localDietaryPreferences.mealsPerDay} meals per day</p>
+              <p className="text-center mt-2">{localProfile.meals_per_day} meals per day</p>
             </div>
             
             <div className="space-y-2">
               <Label>Budget Preference</Label>
               <RadioGroup
-                value={localDietaryPreferences.budget}
-                onValueChange={(value) => handleLocalDietaryChange("budget", value)}
+                value={localProfile.budget_preference || "medium"}
+                onValueChange={(value: BudgetEnum) => handleProfileChange("budget_preference", value)}
                 className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
                 disabled={isGuest}
               >
@@ -458,8 +451,8 @@ const ProfileSettingsForm = ({
             <div className="space-y-2">
               <Label>Cooking Time Preference</Label>
               <Select
-                value={localDietaryPreferences.preparationTime}
-                onValueChange={(value) => handleLocalDietaryChange("preparationTime", value)}
+                value={localProfile.preparation_time_preference || "moderate"}
+                onValueChange={(value: PrepTimeEnum) => handleProfileChange("preparation_time_preference", value)}
                 disabled={isGuest}
               >
                 <SelectTrigger>
