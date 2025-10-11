@@ -1,13 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -15,6 +8,11 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum, DietTypeEnum, PrepTimeEnum, CookingSkillEnum, BudgetEnum } from "@/lib/supabase";
 import { User } from '@supabase/supabase-js';
+
+// Import new modular step components
+import OnboardingStep1BasicInfo from "./OnboardingStep1BasicInfo";
+import OnboardingStep2GoalsActivity from "./OnboardingStep2GoalsActivity";
+import OnboardingStep3DietaryPreferences from "./OnboardingStep3DietaryPreferences";
 
 const OnboardingForm = () => {
   const navigate = useNavigate();
@@ -263,272 +261,29 @@ const OnboardingForm = () => {
               </TabsTrigger>
             </TabsList>
             
-            {/* Step 1: Basic Information */}
-            <TabsContent value="step-1" className="space-y-4 mt-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    value={onboardingData.full_name || ""}
-                    onChange={(e) => handleChange("full_name", e.target.value)}
-                    placeholder="Enter your name"
-                    disabled={isButtonDisabled}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="age">Age</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    value={onboardingData.age || ""}
-                    onChange={(e) => handleChange("age", parseInt(e.target.value) || null)}
-                    placeholder="Enter your age"
-                    min="18"
-                    max="100"
-                    disabled={isButtonDisabled}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Gender</Label>
-                  <RadioGroup
-                    value={onboardingData.gender || ""}
-                    onValueChange={(value: GenderEnum) => handleChange("gender", value)}
-                    className="flex gap-4"
-                    disabled={isButtonDisabled}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="male" id="gender-male" />
-                      <Label htmlFor="gender-male">Male</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="female" id="gender-female" />
-                      <Label htmlFor="gender-female">Female</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="other" id="gender-other" />
-                      <Label htmlFor="gender-other">Other</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="height">Height (cm)</Label>
-                  <Input
-                    id="height"
-                    type="number"
-                    value={onboardingData.height || ""}
-                    onChange={(e) => handleChange("height", parseInt(e.target.value) || null)}
-                    placeholder="Enter your height in cm"
-                    min="100"
-                    max="250"
-                    disabled={isButtonDisabled}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="weight">Current Weight (kg)</Label>
-                  <Input
-                    id="weight"
-                    type="number"
-                    value={onboardingData.current_weight || ""}
-                    onChange={(e) => handleChange("current_weight", parseFloat(e.target.value) || null)}
-                    placeholder="Enter your weight in kg"
-                    min="30"
-                    max="300"
-                    disabled={isButtonDisabled}
-                  />
-                </div>
-              </div>
+            <TabsContent value="step-1">
+              <OnboardingStep1BasicInfo
+                onboardingData={onboardingData}
+                handleChange={handleChange}
+                isButtonDisabled={isButtonDisabled}
+              />
             </TabsContent>
             
-            {/* Step 2: Goals & Activity */}
-            <TabsContent value="step-2" className="space-y-4 mt-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>What's your main goal?</Label>
-                  <RadioGroup
-                    value={onboardingData.goal_type || "lose_weight"}
-                    onValueChange={(value: GoalTypeEnum) => handleChange("goal_type", value)}
-                    className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
-                    disabled={isButtonDisabled}
-                  >
-                    <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                      <RadioGroupItem value="lose_weight" id="goal-weight-loss" />
-                      <Label htmlFor="goal-weight-loss">Weight Loss</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                      <RadioGroupItem value="maintain_weight" id="goal-maintenance" />
-                      <Label htmlFor="goal-maintenance">Maintenance</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                      <RadioGroupItem value="gain_weight" id="goal-muscle-gain" />
-                      <Label htmlFor="goal-muscle-gain">Muscle Gain</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-                
-                {onboardingData.goal_type === "lose_weight" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="targetWeight">Target Weight (kg)</Label>
-                    <Input
-                      id="targetWeight"
-                      type="number"
-                      value={onboardingData.goal_weight || ""}
-                      onChange={(e) => handleChange("goal_weight", parseFloat(e.target.value) || null)}
-                      placeholder="Enter your target weight"
-                      min="30"
-                      max="300"
-                      disabled={isButtonDisabled}
-                    />
-                  </div>
-                )}
-                
-                <div className="space-y-2">
-                  <Label>How would you describe your activity level?</Label>
-                  <Select
-                    value={onboardingData.activity_level || "moderately_active"}
-                    onValueChange={(value: ActivityLevelEnum) => handleChange("activity_level", value)}
-                    disabled={isButtonDisabled}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select activity level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="sedentary">Sedentary (little to no exercise)</SelectItem>
-                      <SelectItem value="lightly_active">Light (light exercise 1-3 days/week)</SelectItem>
-                      <SelectItem value="moderately_active">Moderate (moderate exercise 3-5 days/week)</SelectItem>
-                      <SelectItem value="very_active">Active (hard exercise 6-7 days/week)</SelectItem>
-                      <SelectItem value="extremely_active">Very Active (hard daily exercise & physical job)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>How many meals do you prefer per day?</Label>
-                  <div className="pt-2">
-                    <Slider
-                      value={[onboardingData.meals_per_day || 3]}
-                      min={2}
-                      max={6}
-                      step={1}
-                      onValueChange={(value) => handleChange("meals_per_day", value[0])}
-                      disabled={isButtonDisabled}
-                    />
-                    <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-                      <span>2</span>
-                      <span>3</span>
-                      <span>4</span>
-                      <span>5</span>
-                      <span>6</span>
-                    </div>
-                  </div>
-                  <p className="text-center mt-2">{onboardingData.meals_per_day} meals per day</p>
-                </div>
-              </div>
+            <TabsContent value="step-2">
+              <OnboardingStep2GoalsActivity
+                onboardingData={onboardingData}
+                handleChange={handleChange}
+                isButtonDisabled={isButtonDisabled}
+              />
             </TabsContent>
             
-            {/* Step 3: Dietary Preferences */}
-            <TabsContent value="step-3" className="space-y-4 mt-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Dietary Preferences</Label>
-                  <Select
-                    value={onboardingData.diet_type || "no_restrictions"}
-                    onValueChange={(value: DietTypeEnum) => handleChange("diet_type", value)}
-                    disabled={isButtonDisabled}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select diet type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="no_restrictions">No Restrictions</SelectItem>
-                      <SelectItem value="vegetarian">Vegetarian</SelectItem>
-                      <SelectItem value="vegan">Vegan</SelectItem>
-                      <SelectItem value="keto">Keto</SelectItem>
-                      <SelectItem value="paleo">Paleo</SelectItem>
-                      <SelectItem value="low_carb">Low Carb</SelectItem>
-                      <SelectItem value="mediterranean">Mediterranean</SelectItem>
-                      <SelectItem value="gluten_free">Gluten Free</SelectItem>
-                      <SelectItem value="dairy_free">Dairy Free</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Allergies (select all that apply)</Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
-                    {["nuts", "dairy", "eggs", "soy", "gluten", "shellfish", "fish", "wheat"].map((allergy) => (
-                      <div key={allergy} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`allergy-${allergy}`}
-                          checked={(onboardingData.allergies || []).includes(allergy)}
-                          onCheckedChange={() => handleAllergiesChange(allergy)}
-                          disabled={isButtonDisabled}
-                        />
-                        <Label htmlFor={`allergy-${allergy}`} className="capitalize">
-                          {allergy}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="avoidFoods">Foods you want to avoid</Label>
-                  <Textarea
-                    id="avoidFoods"
-                    value={onboardingData.avoid_foods || ""}
-                    onChange={(e) => handleChange("avoid_foods", e.target.value)}
-                    placeholder="List any specific foods you want to avoid"
-                    rows={3}
-                    disabled={isButtonDisabled}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Budget Preference</Label>
-                  <RadioGroup
-                    value={onboardingData.budget_preference || "medium"}
-                    onValueChange={(value: BudgetEnum) => handleChange("budget_preference", value)}
-                    className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2"
-                    disabled={isButtonDisabled}
-                  >
-                    <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                      <RadioGroupItem value="low" id="budget-low" />
-                      <Label htmlFor="budget-low">Budget-friendly</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                      <RadioGroupItem value="medium" id="budget-medium" />
-                      <Label htmlFor="budget-medium">Moderate</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                      <RadioGroupItem value="high" id="budget-high" />
-                      <Label htmlFor="budget-high">Premium</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Cooking Time Preference</Label>
-                  <Select
-                    value={onboardingData.preparation_time_preference || "moderate"}
-                    onValueChange={(value: PrepTimeEnum) => handleChange("preparation_time_preference", value)}
-                    disabled={isButtonDisabled}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select cooking time preference" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="quick">Quick (under 15 minutes)</SelectItem>
-                      <SelectItem value="moderate">Moderate (15-30 minutes)</SelectItem>
-                      <SelectItem value="extended">Extended (30+ minutes)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            <TabsContent value="step-3">
+              <OnboardingStep3DietaryPreferences
+                onboardingData={onboardingData}
+                handleChange={handleChange}
+                handleAllergiesChange={handleAllergiesChange}
+                isButtonDisabled={isButtonDisabled}
+              />
             </TabsContent>
           </Tabs>
         </CardContent>
