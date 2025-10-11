@@ -17,13 +17,13 @@ import {
   ArrowRight,
   Check,
   X,
-  Edit, // Ensure Edit icon is imported
+  Edit,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useInventory } from "@/hooks/useInventory";
-import { useGroceryLists } from "@/hooks/useGroceryLists"; // Import useGroceryLists hook
-import { GroceryItem as SupabaseGroceryItem } from "@/lib/supabase"; // Import Supabase GroceryItem type
-import { mockFoodDatabase } from "@/data/mockFoodDatabase"; // For generating items from meal plan
+import { useGroceryLists } from "@/hooks/useGroceryLists";
+import { GroceryItem as SupabaseGroceryItem } from "@/lib/supabase";
+import { mockFoodDatabase } from "@/data/mockFoodDatabase";
 
 const Groceries = () => {
   const { addItem: addInventoryItem } = useInventory();
@@ -439,7 +439,7 @@ const Groceries = () => {
                                     className="h-8 w-8"
                                     onClick={() => handleEditStart(item)}
                                   >
-                                    <Edit className="h-4 w-4" /> {/* Replaced <i> with Edit component */}
+                                    <Edit className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     type="button"
@@ -456,9 +456,8 @@ const Groceries = () => {
                           ))}
                         </div>
                       </div>
-                    ))
-                }
-                </div> {/* This closing div was missing, causing the error */}
+                    ))}
+                </div>
 
                 <div className="pt-4 flex justify-between text-sm text-muted-foreground">
                   <span>
