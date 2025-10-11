@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Check,
   X,
+  Edit, // Ensure Edit icon is imported
 } from "lucide-react";
 import { toast } from "sonner";
 import { useInventory } from "@/hooks/useInventory";
@@ -221,7 +222,7 @@ const Groceries = () => {
   if (loading && groceryLists.length === 0 && !selectedListId) {
     return (
       <MainLayout>
-        <div className="text-center py-12 text-muted-foreground">Loading grocery lists...</div>
+        <div className="text-center py-12 text-muted-foreground">Loading items...</div>
       </MainLayout>
     );
   }
@@ -438,7 +439,7 @@ const Groceries = () => {
                                     className="h-8 w-8"
                                     onClick={() => handleEditStart(item)}
                                   >
-                                    <i className="h-4 w-4">✏️</i>
+                                    <Edit className="h-4 w-4" /> {/* Replaced <i> with Edit component */}
                                   </Button>
                                   <Button
                                     type="button"
@@ -456,7 +457,8 @@ const Groceries = () => {
                         </div>
                       </div>
                     ))
-                )}
+                }
+                </div> {/* This closing div was missing, causing the error */}
 
                 <div className="pt-4 flex justify-between text-sm text-muted-foreground">
                   <span>
