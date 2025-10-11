@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useFoodEntries } from "@/hooks/useFoodEntries";
 import { MealTypeEnum } from "@/lib/supabase";
+import { useCustomFoods } from "@/hooks/useCustomFoods"; // New import
 
 interface AddFoodEntryDialogProps {
   isOpen: boolean;
@@ -16,21 +17,65 @@ interface AddFoodEntryDialogProps {
 
 const AddFoodEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddFoodEntryDialogProps) => {
   const { addEntry } = useFoodEntries();
+  const { customFoods, loading: customFoodsLoading } = useCustomFoods(); // Fetch custom foods
   const [newFoodEntry, setNewFoodEntry] = useState({
     food_name: "",
     calories: "",
     protein: "",
     carbs: "",
     fat: "",
+    fiber: "", // Added fiber
+    sugar: "", // Added sugar
+    sodium: "", // Added sodium
     meal_type: "breakfast" as MealTypeEnum,
-    serving_size: "" as string | null, // Added serving_size
+    serving_size: "" as string | null,
     entry_date: new Date().toISOString().split('T')[0], // Current date
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedCustomFoodId, setSelectedCustomFoodId] = useState<string | null>(null); // State for selected custom food
+
+  // Effect to populate form fields when a custom food is selected
+  useEffect(() => {
+    if (selectedCustomFoodId) {
+      const selectedFood = customFoods.find(food => food.id === selectedCustomFoodId);
+      if (selectedFood) {
+        setNewFoodEntry(prev => ({
+          ...prev,
+          food_name: selectedFood.name,
+          calories: selectedFood.calories.toString(),
+          protein: selectedFood.protein?.toString() || "",
+          carbs: selectedFood.carbs?.toString() || "",
+          fat: selectedFood.fat?.toString() || "",
+          fiber: selectedFood.fiber?.toString() || "",
+          sugar: selectedFood.sugar?.toString() || "",
+          sodium: selectedFood.sodium?.toString() || "",
+          serving_size: selectedFood.serving_size || "",
+        }));
+      }
+    } else {
+      // Clear fields if no custom food is selected or selection is cleared
+      setNewFoodEntry(prev => ({
+        ...prev,
+        food_name: "",
+        calories: "",
+        protein: "",
+        carbs: "",
+        fat: "",
+        fiber: "",
+        sugar: "",
+        sodium: "",
+        serving_size: "",
+      }));
+    }
+  }, [selectedCustomFoodId, customFoods]);
 
   const handleSaveFoodEntry = async () => {
     if (!newFoodEntry.food_name || !newFoodEntry.calories) {
       toast.error("Please fill in food name and calories.");
+      return;
+    }
+    if (parseFloat(newFoodEntry.calories) <= 0) {
+      toast.error("Calories must be a positive number.");
       return;
     }
 
@@ -38,12 +83,15 @@ const AddFoodEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddFoodEntry
     try {
       await addEntry({
         food_name: newFoodEntry.food_name,
-        calories: parseInt(newFoodEntry.calories),
-        protein: parseInt(newFoodEntry.protein) || 0,
-        carbs: parseInt(newFoodEntry.carbs) || 0,
-        fat: parseInt(newFoodEntry.fat) || 0,
+        calories: parseFloat(newFoodEntry.calories),
+        protein: parseFloat(newFoodEntry.protein) || 0,
+        carbs: parseFloat(newFoodEntry.carbs) || 0,
+        fat: parseFloat(newFoodEntry.fat) || 0,
+        fiber: parseFloat(newFoodEntry.fiber) || 0, // Include fiber
+        sugar: parseFloat(newFoodEntry.sugar) || 0, // Include sugar
+        sodium: parseFloat(newFoodEntry.sodium) || 0, // Include sodium
         meal_type: newFoodEntry.meal_type,
-        serving_size: newFoodEntry.serving_size || null, // Pass serving_size
+        serving_size: newFoodEntry.serving_size || null,
         entry_date: newFoodEntry.entry_date,
       });
       
@@ -54,10 +102,14 @@ const AddFoodEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddFoodEntry
         protein: "",
         carbs: "",
         fat: "",
+        fiber: "",
+        sugar: "",
+        sodium: "",
         meal_type: "breakfast",
-        serving_size: null, // Reset serving_size
+        serving_size: null,
         entry_date: new Date().toISOString().split('T')[0],
       });
+      setSelectedCustomFoodId(null); // Reset custom food selection
       onOpenChange(false);
       if (onEntryAdded) {
         onEntryAdded();
@@ -80,6 +132,31 @@ const AddFoodEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddFoodEntry
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          {customFoods.length > 0 && (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="select-custom-food" className="text-right">
+                Custom Food
+              </Label>
+              <Select
+                value={selectedCustomFoodId || ""}
+                onValueChange={(value) => setSelectedCustomFoodId(value === "none" ? null : value)}
+                disabled={customFoodsLoading}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a custom food (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">-- Clear Selection --</SelectItem>
+                  {customFoods.map(food => (
+                    <SelectItem key={food.id} value={food.id}>
+                      {food.name} ({food.calories} kcal)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="food-name" className="text-right">
               Food
@@ -147,6 +224,48 @@ const AddFoodEntryDialog = ({ isOpen, onOpenChange, onEntryAdded }: AddFoodEntry
               className="col-span-3"
               type="number"
               placeholder="e.g., 18"
+              min="0"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="fiber" className="text-right">
+              Fiber (g)
+            </Label>
+            <Input
+              id="fiber"
+              value={newFoodEntry.fiber}
+              onChange={(e) => setNewFoodEntry({...newFoodEntry, fiber: e.target.value})}
+              className="col-span-3"
+              type="number"
+              placeholder="e.g., 5"
+              min="0"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="sugar" className="text-right">
+              Sugar (g)
+            </Label>
+            <Input
+              id="sugar"
+              value={newFoodEntry.sugar}
+              onChange={(e) => setNewFoodEntry({...newFoodEntry, sugar: e.target.value})}
+              className="col-span-3"
+              type="number"
+              placeholder="e.g., 8"
+              min="0"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="sodium" className="text-right">
+              Sodium (mg)
+            </Label>
+            <Input
+              id="sodium"
+              value={newFoodEntry.sodium}
+              onChange={(e) => setNewFoodEntry({...newFoodEntry, sodium: e.target.value})}
+              className="col-span-3"
+              type="number"
+              placeholder="e.g., 150"
               min="0"
             />
           </div>
