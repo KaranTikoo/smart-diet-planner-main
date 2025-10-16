@@ -11,7 +11,7 @@ export const italianFoods: FoodItem[] = [
     fat: 18,
     tags: ["italian", "vegetarian", "quick"],
     prepTime: 15,
-    image: "/images/food/healthy-pasta.jpg", // <-- Updated to use an image from the public folder
+    image: "/images/food/Spaghetti Aglio e Olio.jpeg", // <-- Updated to the new filename
     ingredients: ["spaghetti", "garlic", "olive oil", "chili flakes", "parsley"],
     mealType: "dinner",
     dietTypes: ["vegetarian"],
