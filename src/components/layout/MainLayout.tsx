@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/AuthProvider"; // Import useAuth
+import { useProfile } from "@/hooks/useProfile"; // Import useProfile hook
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Import Avatar components
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -24,6 +26,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isGuest, signOut } = useAuth(); // Get user, isGuest, and signOut from useAuth
+  const { profile } = useProfile(); // Get profile data
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -45,8 +48,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const displayUserName = isGuest ? "Guest" : (user?.email || "User");
-  const displayUserInitial = isGuest ? "G" : (user?.email ? user.email[0].toUpperCase() : "U");
+  const displayUserName = isGuest ? "Guest" : (profile?.full_name || user?.email || "User");
+  const displayUserInitial = isGuest ? "G" : (profile?.full_name ? profile.full_name[0].toUpperCase() : (user?.email ? user.email[0].toUpperCase() : "U"));
   const logoutButtonText = isGuest ? "Exit Guest Mode" : "Logout";
 
   return (
@@ -112,11 +115,12 @@ const MainLayout = ({ children }: MainLayoutProps) => {
           </nav>
           <div className="p-4 border-t">
             <div className="flex items-center gap-3 px-4 py-2 mb-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary">
-                <span className="text-primary-foreground font-semibold">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={profile?.avatar_url || undefined} alt="User Avatar" />
+                <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
                   {displayUserInitial}
-                </span>
-              </div>
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1 truncate">
                 <p className="text-sm font-medium">{displayUserName}</p>
               </div>

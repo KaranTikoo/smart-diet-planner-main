@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useAuth } from "@/providers/AuthProvider";
 import { Profile, GenderEnum, ActivityLevelEnum, GoalTypeEnum, DietTypeEnum, PrepTimeEnum, CookingSkillEnum, BudgetEnum } from "@/lib/supabase";
+import AvatarUpload from "@/components/profile/AvatarUpload"; // Import AvatarUpload
 
 interface ProfileSettingsFormProps {
   user: any; // Supabase User object
@@ -103,6 +104,7 @@ const ProfileSettingsForm = ({
         preparation_time_preference: profileData.preparation_time_preference,
         cooking_skill_level: profileData.cooking_skill_level,
         budget_preference: profileData.budget_preference,
+        avatar_url: profileData.avatar_url, // Initialize avatar_url
       });
     }
   }, [profileData]);
@@ -145,6 +147,10 @@ const ProfileSettingsForm = ({
     });
   };
 
+  const handleAvatarChange = (newUrl: string | null) => {
+    setLocalProfile((prev) => ({ ...prev, avatar_url: newUrl }));
+  };
+
   const handleSaveChanges = async () => {
     if (!user) {
       toast.error("You must be logged in to save changes.");
@@ -161,6 +167,11 @@ const ProfileSettingsForm = ({
 
   return (
     <div className="space-y-6">
+      <AvatarUpload
+        currentAvatarUrl={localProfile.avatar_url || null}
+        onAvatarChange={handleAvatarChange}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle>Personal Information</CardTitle>
@@ -425,7 +436,7 @@ const ProfileSettingsForm = ({
             </div>
 
             <div className="space-y-2">
-              <Label>How many snacks do you prefer per day?</Label>
+              <Label>Snacks per day</Label>
               <div className="pt-2">
                 <Slider
                   value={[localProfile.snacks_per_day || 1]}

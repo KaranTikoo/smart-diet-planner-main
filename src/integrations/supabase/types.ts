@@ -31,6 +31,7 @@ export type Database = {
           preparation_time_preference: Database['public']['Enums']['prep_time_enum'] | null
           cooking_skill_level: Database['public']['Enums']['cooking_skill_enum'] | null
           budget_preference: Database['public']['Enums']['budget_enum'] | null
+          avatar_url: string | null -- Added avatar_url
           created_at: string
           updated_at: string
         }
@@ -55,6 +56,7 @@ export type Database = {
           preparation_time_preference?: Database['public']['Enums']['prep_time_enum'] | null
           cooking_skill_level?: Database['public']['Enums']['cooking_skill_enum'] | null
           budget_preference?: Database['public']['Enums']['budget_enum'] | null
+          avatar_url?: string | null -- Added avatar_url
           created_at?: string
           updated_at?: string
         }
@@ -79,6 +81,7 @@ export type Database = {
           preparation_time_preference?: Database['public']['Enums']['prep_time_enum'] | null
           cooking_skill_level?: Database['public']['Enums']['cooking_skill_enum'] | null
           budget_preference?: Database['public']['Enums']['budget_enum'] | null
+          avatar_url?: string | null -- Added avatar_url
           created_at?: string
           updated_at?: string
         }
