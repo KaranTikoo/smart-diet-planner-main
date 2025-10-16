@@ -196,4 +196,19 @@ export const italianFoods: FoodItem[] = [
     mealType: "snack",
     dietTypes: ["vegetarian"],
   },
+  {
+    id: 999, // Temporary test ID
+    title: "Test Placeholder Food",
+    description: "This is a test food to check local image loading.",
+    calories: 100,
+    protein: 10,
+    carbs: 10,
+    fat: 10,
+    tags: ["test"],
+    prepTime: 5,
+    image: "/placeholder.svg", // Using a known working local SVG
+    ingredients: ["test ingredient"],
+    mealType: "snack",
+    dietTypes: [],
+  },
 ];
