@@ -11,7 +11,7 @@ export const italianFoods: FoodItem[] = [
     fat: 18,
     tags: ["italian", "vegetarian", "quick"],
     prepTime: 15,
-    image: "/images/food/Spaghetti Aglio e Olio.jpeg", // Confirmed path with .jpeg extension
+    image: "/images/food/Spaghetti Aglio e Olio.jpeg", // Confirmed: This path is correct for web access
     ingredients: ["spaghetti", "garlic", "olive oil", "chili flakes", "parsley"],
     mealType: "dinner",
     dietTypes: ["vegetarian"],
