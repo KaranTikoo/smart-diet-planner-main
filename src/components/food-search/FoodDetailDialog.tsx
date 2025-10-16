@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { 
   Dialog, 
@@ -21,6 +20,9 @@ const FoodDetailDialog = ({
 }: FoodDetailDialogProps) => {
   if (!selectedFood) return null;
 
+  // Use a fallback image if selectedFood.image is missing or broken
+  const imageUrl = selectedFood.image || "/placeholder.svg";
+
   return (
     <Dialog open={!!selectedFood} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
@@ -32,11 +34,13 @@ const FoodDetailDialog = ({
         </DialogHeader>
         
         <div className="space-y-4">
-          {selectedFood.image && (
-            <div className="h-60 overflow-hidden rounded-md">
-              <img src={selectedFood.image} alt={selectedFood.title} className="w-full h-full object-cover" />
-            </div>
-          )}
+          {/* Use the determined imageUrl */}
+          <div className="h-60 overflow-hidden rounded-md">
+            <img src={imageUrl} alt={selectedFood.title} className="w-full h-full object-cover" onError={(e) => {
+              // Fallback to a generic placeholder if the image fails to load
+              (e.target as HTMLImageElement).src = "/placeholder.svg";
+            }} />
+          </div>
           
           <div className="grid grid-cols-4 gap-4 text-center">
             <div className="bg-muted p-3 rounded-md">
