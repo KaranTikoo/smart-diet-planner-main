@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import SearchFilters from "@/components/search/SearchFilters";
 import FoodCard from "@/components/ui/FoodCard";
@@ -8,112 +7,107 @@ import { Filter } from "lucide-react";
 import { toast } from "sonner";
 import FoodSearchBar from "@/components/food-search/FoodSearchBar";
 import FoodDetailDialog from "@/components/food-search/FoodDetailDialog";
-import MobileFiltersDialog from "@/components/food-search/MobileFiltersDialog";
+import MobileFiltersDialog from "@/components/food-search/MobileFiltersDialog"; // Corrected import path
 import NoResultsMessage from "@/components/food-search/NoResultsMessage";
 import { mockFoodDatabase } from "@/data/mockFoodDatabase";
+import { FoodItem } from "@/types/food";
 
 const FoodSearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [foods, setFoods] = useState(mockFoodDatabase);
-  const [selectedFood, setSelectedFood] = useState<any>(null);
-  const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<any>({});
+  const [foods, setFoods] = useState<FoodItem[]>([]); // Initialize as empty, let useEffect populate
+  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+  const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!searchQuery.trim()) {
-      setFoods(mockFoodDatabase);
-      return;
-    }
-    
-    const filteredFoods = mockFoodDatabase.filter((food) => 
-      food.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      food.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      food.ingredients.some(ing => ing.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-    
-    setFoods(filteredFoods);
-    
-    if (filteredFoods.length === 0) {
-      toast.info("No foods found matching your search");
-    }
-  };
+  // Centralized function to apply all filters and search query
+  const getFilteredFoods = useCallback((currentSearchQuery: string, currentFilters: any): FoodItem[] => {
+    let filtered = [...mockFoodDatabase];
 
-  const handleFoodDetails = (food: any) => {
-    setSelectedFood(food);
-  };
-
-  const handleApplyFilters = (filters: any) => {
-    setAppliedFilters(filters);
-    
-    let filteredFoods = [...mockFoodDatabase];
-    
     // Apply search query filter
-    if (searchQuery.trim()) {
-      filteredFoods = filteredFoods.filter((food) => 
-        food.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        food.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        food.ingredients.some(ing => ing.toLowerCase().includes(searchQuery.toLowerCase()))
+    if (currentSearchQuery.trim()) {
+      filtered = filtered.filter((food) => 
+        food.title.toLowerCase().includes(currentSearchQuery.toLowerCase()) ||
+        food.description.toLowerCase().includes(currentSearchQuery.toLowerCase()) ||
+        food.ingredients.some(ing => ing.toLowerCase().includes(currentSearchQuery.toLowerCase()))
+      );
+    }
+
+    // Apply calorie range filter
+    if (currentFilters.caloriesRange && (currentFilters.caloriesRange[0] !== 0 || currentFilters.caloriesRange[1] !== 1000)) {
+      filtered = filtered.filter(
+        (food) => food.calories >= currentFilters.caloriesRange[0] && food.calories <= currentFilters.caloriesRange[1]
       );
     }
     
-    // Apply calorie range filter
-    filteredFoods = filteredFoods.filter(
-      (food) => food.calories >= filters.caloriesRange[0] && food.calories <= filters.caloriesRange[1]
-    );
-    
     // Apply meal type filter
-    if (filters.mealType && filters.mealType !== "any_meal") {
-      filteredFoods = filteredFoods.filter((food) => food.mealType === filters.mealType);
+    if (currentFilters.mealType && currentFilters.mealType !== "any_meal") {
+      filtered = filtered.filter((food) => food.mealType === currentFilters.mealType);
     }
     
     // Apply diet types filter
-    if (filters.dietTypes.length > 0) {
-      filteredFoods = filteredFoods.filter((food) => 
-        filters.dietTypes.some((diet: string) => food.dietTypes.includes(diet))
+    if (currentFilters.dietTypes && currentFilters.dietTypes.length > 0) {
+      filtered = filtered.filter((food) => 
+        currentFilters.dietTypes.some((diet: string) => food.dietTypes.includes(diet))
       );
     }
     
     // Apply ingredients filter
-    if (filters.ingredients.length > 0) {
-      filteredFoods = filteredFoods.filter((food) => 
-        filters.ingredients.every((ingredient: string) => 
+    if (currentFilters.ingredients && currentFilters.ingredients.length > 0) {
+      filtered = filtered.filter((food) => 
+        currentFilters.ingredients.every((ingredient: string) => 
           food.ingredients.some((foodIng) => foodIng.toLowerCase().includes(ingredient.toLowerCase()))
         )
       );
     }
     
     // Apply prep time filter
-    if (filters.prepTime && filters.prepTime !== "any_time") {
-      switch (filters.prepTime) {
+    if (currentFilters.prepTime && currentFilters.prepTime !== "any_time") {
+      switch (currentFilters.prepTime) {
         case "under15":
-          filteredFoods = filteredFoods.filter((food) => food.prepTime < 15);
+          filtered = filtered.filter((food) => food.prepTime < 15);
           break;
         case "under30":
-          filteredFoods = filteredFoods.filter((food) => food.prepTime < 30);
+          filtered = filtered.filter((food) => food.prepTime < 30);
           break;
         case "under60":
-          filteredFoods = filteredFoods.filter((food) => food.prepTime < 60);
+          filtered = filtered.filter((food) => food.prepTime < 60);
           break;
         case "over60":
-          filteredFoods = filteredFoods.filter((food) => food.prepTime >= 60);
+          filtered = filtered.filter((food) => food.prepTime >= 60);
           break;
         default:
           break;
       }
     }
-    
-    setFoods(filteredFoods);
-    setIsFiltersModalOpen(false);
-    
-    if (filteredFoods.length === 0) {
-      toast.info("No foods found matching your filters");
+    return filtered;
+  }, []); // mockFoodDatabase is a constant, no need to list as dependency
+
+  // Effect to re-filter foods whenever searchQuery or appliedFilters change
+  useEffect(() => {
+    const newFilteredFoods = getFilteredFoods(searchQuery, appliedFilters);
+    setFoods(newFilteredFoods);
+    // Only show toast if there's an active search or filter and no results
+    if (newFilteredFoods.length === 0 && (searchQuery.trim() || Object.keys(appliedFilters).length > 0)) {
+      toast.info("No foods found matching your criteria.");
     }
+  }, [searchQuery, appliedFilters, getFilteredFoods]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // The useEffect will handle updating `foods` and showing toast.
+    // No need to call setFoods directly here.
+    // The `setSearchQuery` is already called by the Input onChange.
+    // This function primarily prevents default form submission.
   };
 
-  const handleAddToMealPlan = (food: any) => {
+  const handleApplyFilters = (filters: any) => {
+    setAppliedFilters(filters); // This will trigger the useEffect to re-filter
+    setIsFiltersModalOpen(false);
+  };
+
+  const handleAddToMealPlan = (food: FoodItem) => {
     toast.success(`Added ${food.title} to your meal plan`);
+    // Further logic to actually add to meal plan (e.g., via a hook or context)
   };
 
   return (
@@ -164,7 +158,7 @@ const FoodSearch = () => {
                   fat={food.fat}
                   tags={food.tags}
                   image={food.image}
-                  onDetails={() => handleFoodDetails(food)}
+                  onDetails={() => setSelectedFood(food)}
                   onAdd={() => handleAddToMealPlan(food)}
                 />
               ))}
