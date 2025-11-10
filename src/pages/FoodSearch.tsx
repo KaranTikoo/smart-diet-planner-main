@@ -7,7 +7,7 @@ import { Filter } from "lucide-react";
 import { toast } from "sonner";
 import FoodSearchBar from "@/components/food-search/FoodSearchBar";
 import FoodDetailDialog from "@/components/food-search/FoodDetailDialog";
-import MobileFiltersDialog from "@/components/food-search/MobileFiltersDialog"; // Corrected import path
+import MobileFiltersDialog from "@/components/food-search/MobileFiltersDialog";
 import NoResultsMessage from "@/components/food-search/NoResultsMessage";
 import { mockFoodDatabase } from "@/data/mockFoodDatabase";
 import { FoodItem } from "@/types/food";
@@ -15,7 +15,7 @@ import { FoodItem } from "@/types/food";
 const FoodSearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedFilters, setAppliedFilters] = useState<any>({});
-  const [foods, setFoods] = useState<FoodItem[]>([]); // Initialize as empty, let useEffect populate
+  const [foods, setFoods] = useState<FoodItem[]>([]); // Initialize as empty
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
 
@@ -80,15 +80,21 @@ const FoodSearch = () => {
       }
     }
     return filtered;
-  }, []); // mockFoodDatabase is a constant, no need to list as dependency
+  }, []);
 
   // Effect to re-filter foods whenever searchQuery or appliedFilters change
   useEffect(() => {
-    const newFilteredFoods = getFilteredFoods(searchQuery, appliedFilters);
-    setFoods(newFilteredFoods);
-    // Only show toast if there's an active search or filter and no results
-    if (newFilteredFoods.length === 0 && (searchQuery.trim() || Object.keys(appliedFilters).length > 0)) {
-      toast.info("No foods found matching your criteria.");
+    const hasActiveSearchOrFilters = searchQuery.trim() || Object.keys(appliedFilters).length > 0;
+
+    if (hasActiveSearchOrFilters) {
+      const newFilteredFoods = getFilteredFoods(searchQuery, appliedFilters);
+      setFoods(newFilteredFoods);
+      if (newFilteredFoods.length === 0) {
+        toast.info("No foods found matching your criteria.");
+      }
+    } else {
+      // If no active search or filters, clear the results
+      setFoods([]);
     }
   }, [searchQuery, appliedFilters, getFilteredFoods]);
 
@@ -146,25 +152,31 @@ const FoodSearch = () => {
 
           {/* Results */}
           <div className="w-full md:w-3/4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {foods.map((food) => (
-                <FoodCard
-                  key={food.id}
-                  title={food.title}
-                  description={food.description}
-                  calories={food.calories}
-                  protein={food.protein}
-                  carbs={food.carbs}
-                  fat={food.fat}
-                  tags={food.tags}
-                  image={food.image}
-                  onDetails={() => setSelectedFood(food)}
-                  onAdd={() => handleAddToMealPlan(food)}
-                />
-              ))}
-            </div>
-            
-            {foods.length === 0 && <NoResultsMessage />}
+            {foods.length === 0 && (searchQuery.trim() || Object.keys(appliedFilters).length > 0) ? (
+              <NoResultsMessage />
+            ) : foods.length === 0 && !searchQuery.trim() && Object.keys(appliedFilters).length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-lg text-muted-foreground">Start by searching for a food or applying filters.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {foods.map((food) => (
+                  <FoodCard
+                    key={food.id}
+                    title={food.title}
+                    description={food.description}
+                    calories={food.calories}
+                    protein={food.protein}
+                    carbs={food.carbs}
+                    fat={food.fat}
+                    tags={food.tags}
+                    image={food.image}
+                    onDetails={() => setSelectedFood(food)}
+                    onAdd={() => handleAddToMealPlan(food)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
